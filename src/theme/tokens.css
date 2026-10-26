@@ -1,0 +1,96 @@
+:root {
+  /* Figma color 色彩 / basic 基础 variables */
+  --color-brand: #0057ff;
+  --color-brand-hover: rgba(0, 87, 255, 0.8);
+  --color-brand-active: #0057ff;
+  --color-brand-disabled: rgba(0, 87, 255, 0.4);
+  --color-brand-light-hover: #e5eeff;
+  --color-brand-light: rgba(0, 87, 255, 0.05);
+  --color-brand-focus: rgba(0, 87, 255, 0.4);
+
+  --color-page-bg: #f1f2f5;
+  --color-surface: #ffffff;
+  --color-surface-hover: #f1f2f5;
+  --color-surface-subtle: #eaecf2;
+  --color-table-header-bg: #f5f6f8;
+  --color-component-hover: #d9d9d9;
+  --color-component-disabled: #f1f2f5;
+  --color-surface-selected: #e5eeff;
+  --color-border: #d9d9d9;
+  --color-border-subtle: #eaecf2;
+  --color-border-strong: #b0b3bd;
+  --color-border-brand: #0057ff;
+  --color-text: #101114;
+  --color-text-secondary: #525766;
+  --color-text-tertiary: #797b80;
+  --color-text-disabled: #b0b3bd;
+  --color-text-brand: #0057ff;
+  --color-text-anti: #ffffff;
+  --color-modal-title-hint: var(--color-text-tertiary);
+
+  --color-success: #52c1b4;
+  --color-success-border: rgba(82, 193, 180, 0.32);
+  --color-warning: #ff9900;
+  --color-error: #ea5b41;
+  --color-info: #00a2ff;
+  --color-caution: #ffd600;
+  --color-accent: #903da8;
+  --color-success-bg: rgba(82, 193, 180, 0.12);
+  --color-warning-bg: rgba(255, 153, 0, 0.12);
+  --color-error-bg: rgba(234, 91, 65, 0.12);
+  --color-info-bg: rgba(0, 162, 255, 0.12);
+  --color-mask-active: rgba(0, 0, 0, 0.6);
+
+  /* Authorization view tag semantics. */
+  --color-tag-basedata-text: #2658b7;
+  --color-tag-basedata-bg: rgba(0, 87, 255, 0.10);
+  --color-tag-basedata-border: rgba(0, 87, 255, 0.22);
+  --color-tag-public-text: #7a3e9d;
+  --color-tag-public-bg: #f7ebff;
+  --color-tag-public-border: #e7c8f5;
+  --color-tag-other-text: #147a9b;
+  --color-tag-other-bg: #e8f7fb;
+  --color-tag-other-border: #bee8f1;
+  --color-tag-create-text: #24766d;
+  --color-tag-create-bg: var(--color-success-bg);
+  --color-tag-create-border: rgba(82, 193, 180, 0.32);
+  --color-tag-delete-text: #b33e2d;
+  --color-tag-delete-bg: var(--color-error-bg);
+  --color-tag-delete-border: rgba(234, 91, 65, 0.30);
+  --color-tag-update-text: #9a4d00;
+  --color-tag-update-bg: var(--color-warning-bg);
+  --color-tag-update-border: rgba(255, 153, 0, 0.30);
+  --color-tag-read-text: var(--color-tag-basedata-text);
+  --color-tag-read-bg: var(--color-tag-basedata-bg);
+  --color-tag-read-border: var(--color-tag-basedata-border);
+  --color-tag-neutral-text: var(--color-text-secondary);
+  --color-tag-neutral-bg: var(--color-surface-subtle);
+  --color-tag-neutral-border: var(--color-border);
+
+  --font-family-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-size-body: 14px;
+  --font-size-table: 13px;
+  --font-size-caption: 12px;
+  --line-height-body: 22px;
+  --line-height-heading: 28px;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  /* Modal outer content padding. */
+  --modal-content-padding: var(--space-6);
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+
+  /* Modal close button: 8px left of Ant Design's default inline-end position. */
+  --modal-close-top: 20px;
+  --modal-close-inset-inline-end: 20px;
+}
+
