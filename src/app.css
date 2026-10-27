@@ -80,6 +80,8 @@ body { color: var(--color-text); background: var(--color-page-bg); font-family: 
 .nav-menu .ant-menu-submenu-arrow { display: none; }
 .nav-menu .ant-menu-sub.ant-menu-inline { background: transparent; }
 .nav-menu-label { display: flex; align-items: center; min-width: 0; width: 100%; gap: 8px; }
+.nav-menu-leading { display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center; line-height: 0; }
+.nav-menu-leading .ant-checkbox { margin: 0; }
 .nav-menu-arrow, .nav-menu-arrow-placeholder { display: inline-flex; flex: 0 0 16px; width: 16px; height: 16px; align-items: center; justify-content: center; color: var(--color-text-tertiary); font-size: 12px; line-height: 0; }
 .nav-menu-arrow .i-icon { display: inline-flex; width: 16px; height: 16px; align-items: center; justify-content: center; line-height: 0; }
 .nav-menu-arrow .i-icon > svg { display: block; }
@@ -142,6 +144,8 @@ body { color: var(--color-text); background: var(--color-page-bg); font-family: 
 /* Apply this semantic class to explanatory copy immediately below a modal title. */
 .modal-title-hint.ant-typography { color: var(--color-modal-title-hint); }
 .destructive-confirm-modal .modal-title-hint.ant-typography { color: var(--color-text); }
+.delete-form-confirm-content { display: flex; flex-direction: column; gap: 8px; }
+.delete-form-confirm-content .modal-title-hint.ant-typography { margin-bottom: 0; }
 .access-register-modal .ant-modal-header { margin-bottom: var(--modal-content-padding); }
 .access-register-modal { height: min(600px, calc(100vh - 32px)); max-height: 600px; }
 .access-register-modal .ant-modal-container { display: flex; height: 100%; max-height: 600px; flex-direction: column; }
@@ -172,14 +176,15 @@ body { color: var(--color-text); background: var(--color-page-bg); font-family: 
 .interface-detail-content { display: flex; min-height: 0; flex: 1; flex-direction: column; }
 .interface-detail-toolbar { display: flex; flex: 0 0 auto; align-items: center; justify-content: flex-start; gap: 16px; margin-bottom: 16px; }
 .interface-detail-toolbar .ant-btn { min-width: 96px; height: 32px; font-size: 14px; font-weight: 400; }
-.interface-detail-table-scroll.prototype-table-scroll { min-height: 0; flex: 1; overflow: visible; }
-.interface-detail-table-scroll::after { position: absolute; right: 6px; bottom: 0; left: 6px; z-index: 4; height: 1px; border-radius: 0 0 6px 6px; background: var(--color-border-subtle); content: ""; pointer-events: none; }
+.interface-detail-table-scroll.prototype-table-scroll { box-sizing: border-box; min-height: 0; flex: 1; overflow-x: auto; overflow-y: hidden; border: 1px solid var(--color-border-subtle); border-radius: 6px; }
 .interface-detail-table,
 .interface-detail-table .ant-table-container { overflow: hidden; border-radius: 6px; }
-.interface-detail-table { border: 1px solid var(--color-border-subtle); }
+.interface-detail-table { border: 0; }
+.interface-detail-table .ant-table-container { border: 0; }
 .interface-detail-table .ant-table { min-width: 1160px; }
 .interface-detail-table .ant-table-thead > tr > th { padding: 12px 16px; background: var(--color-table-header-bg); color: var(--color-text); font-size: 14px; font-weight: 600; white-space: nowrap; }
 .interface-detail-table .ant-table-tbody > tr > td { padding: 12px 16px; color: var(--color-text); font-size: 14px; vertical-align: middle; }
+.interface-detail-table .ant-table-tbody > tr:last-child > td { border-bottom: 0; }
 .interface-code-text,
 .interface-name-text,
 .interface-method-text,
@@ -269,11 +274,12 @@ body { color: var(--color-text); background: var(--color-page-bg); font-family: 
 .data-permission-modal .ant-modal-body { display: flex; min-height: 0; flex: 1; margin-inline: calc(var(--modal-content-padding) * -1); padding: 0; overflow: hidden; }
 /* The full-height permission modal keeps the global footer gap without extra top padding. */
 .data-permission-modal .ant-modal-footer { flex: 0 0 auto; margin-inline: calc(var(--modal-content-padding) * -1); padding: 0 var(--modal-content-padding) var(--modal-content-padding); }
-.data-permission-content { display: flex; min-height: 0; flex: 1; border-bottom: 1px solid var(--color-border-subtle); }
+.data-permission-content { position: relative; display: flex; min-height: 0; flex: 1; border-bottom: 1px solid var(--color-border-subtle); }
 .data-permission-sidebar { display: flex; width: 300px; min-width: 300px; min-height: 0; flex-direction: column; border-inline-end: 1px solid var(--color-border-subtle); }
 .data-permission-sidebar > .ant-tabs { flex: 0 0 auto; }
 .data-permission-sidebar .ant-tabs-nav { margin: 0; }
 .data-permission-sidebar .ant-tabs-tab:first-child { margin-inline-start: 24px; }
+.data-permission-sidebar .ant-tabs-tab + .ant-tabs-tab { margin-inline-start: 24px; }
 .data-permission-sidebar-content { display: flex; min-height: 0; flex: 1; flex-direction: column; padding: 12px 16px 16px 24px; }
 .data-permission-sidebar-content .ant-input-affix-wrapper { flex: 0 0 auto; }
 .data-permission-sidebar .ant-input-prefix { display: inline-flex; align-items: center; line-height: 0; }
@@ -281,6 +287,20 @@ body { color: var(--color-text); background: var(--color-page-bg); font-family: 
 .data-permission-sidebar-list { width: 259px; min-height: 0; flex: 1; margin-top: 12px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(82, 87, 102, 0.32) transparent; }
 .data-permission-sidebar-list::-webkit-scrollbar { width: 6px; }
 .data-permission-sidebar-list::-webkit-scrollbar-thumb { border: 2px solid transparent; border-radius: 8px; background: rgba(82, 87, 102, 0.32); background-clip: padding-box; }
+.data-permission-sidebar-content > .nav-menu-viewport { margin-top: 12px; overflow: visible; }
+.data-permission-sidebar-content > .nav-menu-viewport .nav-menu-floating-scrollbar { right: -12px; }
+.data-permission-navigation-menu,
+.data-permission-navigation-menu.ant-menu-inline { width: 100% !important; margin: 0 !important; }
+.data-permission-navigation-menu .ant-menu-item,
+.data-permission-navigation-menu .ant-menu-submenu-title { width: 100% !important; }
+.data-permission-navigation-menu .nav-menu-depth-1.ant-menu-item,
+.data-permission-navigation-menu .nav-menu-depth-1 > .ant-menu-submenu-title { width: calc(100% + 24px) !important; }
+.data-permission-navigation-menu .nav-menu-depth-2.ant-menu-item,
+.data-permission-navigation-menu .nav-menu-depth-2 > .ant-menu-submenu-title { width: calc(100% + 48px) !important; }
+.data-permission-navigation-menu .nav-menu-depth-3.ant-menu-item,
+.data-permission-navigation-menu .nav-menu-depth-3 > .ant-menu-submenu-title { width: calc(100% + 72px) !important; }
+.data-permission-navigation-menu .nav-menu-depth-4.ant-menu-item,
+.data-permission-navigation-menu .nav-menu-depth-4 > .ant-menu-submenu-title { width: calc(100% + 96px) !important; }
 .data-permission-search-empty { display: flex; min-height: 100%; align-items: center; justify-content: center; color: var(--color-text-tertiary); }
 .data-permission-group + .data-permission-group { margin-top: 8px; }
 .data-permission-domain-item { display: flex; width: 259px; height: 40px; align-items: center; gap: 8px; cursor: pointer; }
@@ -305,9 +325,8 @@ body { color: var(--color-text); background: var(--color-page-bg); font-family: 
 .data-permission-other-service-status { flex: 0 0 auto; color: var(--color-text-tertiary); font-size: 12px; line-height: 20px; }
 .data-permission-other-service-status.is-enabled { color: var(--color-text-tertiary); }
 .data-permission-other-service-count { flex: 0 0 auto; color: var(--color-text-tertiary); font-size: 12px; line-height: 20px; }
-.data-permission-main { min-width: 0; min-height: 0; flex: 1; overflow-y: auto; padding: 22px 24px; scrollbar-width: thin; scrollbar-color: rgba(82, 87, 102, 0.32) transparent; }
-.data-permission-main::-webkit-scrollbar { width: 6px; }
-.data-permission-main::-webkit-scrollbar-thumb { border: 2px solid transparent; border-radius: 8px; background: rgba(82, 87, 102, 0.32); background-clip: padding-box; }
+.data-permission-main { min-width: 0; min-height: 0; flex: 1; overflow-y: auto; padding: 22px 24px; scrollbar-width: none; }
+.data-permission-main::-webkit-scrollbar { display: none; width: 0; height: 0; }
 .data-permission-main-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 16px; }
 .data-permission-main-heading .ant-typography { margin: 0; }
 .data-permission-main-heading .ant-typography + .ant-typography { display: block; margin-top: 4px; }
@@ -326,7 +345,8 @@ body { color: var(--color-text); background: var(--color-page-bg); font-family: 
 .data-permission-block-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
 .data-permission-block-title-stack { display: flex; min-width: 0; flex-direction: column; gap: 0; }
 .data-permission-modal .data-permission-block-heading h5.ant-typography { margin: 0; font-size: 14px; line-height: 22px; }
-.data-permission-field-count.ant-typography { margin-inline-start: auto; font-size: 12px; text-align: right; white-space: nowrap; }
+.data-permission-selection-summary { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 8px; margin-inline-start: auto; }
+.data-permission-field-count.ant-typography { font-size: 12px; text-align: right; white-space: nowrap; }
 .data-permission-block-hint.ant-typography { display: block; margin: 0; font-size: 12px; line-height: 20px; }
 .data-permission-block-heading > .data-permission-add-condition.ant-btn-link { align-self: flex-start; margin-inline-start: auto; margin-inline-end: 0; padding-inline: 0; color: var(--color-brand); }
 .data-permission-add-condition.ant-btn-link:not(:disabled):not(.ant-btn-disabled):hover { color: var(--color-brand-hover) !important; }
@@ -354,7 +374,6 @@ body { color: var(--color-text); background: var(--color-page-bg); font-family: 
 .data-permission-other-interface-method.ant-tag { margin: 0; padding-inline: 6px; border: 1px solid; border-radius: 4px; font-size: 12px; font-weight: 600; line-height: 20px; }
 .data-permission-other-interface-method.is-get { color: #1d4bb7; border-color: #c7d9ff; background: #e5eeff; }
 .data-permission-other-interface-method.is-post { color: #0d9b4d; border-color: #b7ebc6; background: #dcfce7; }
-.data-permission-other-interface-url.ant-typography { display: block; overflow: hidden; margin-top: 2px; color: var(--color-text-tertiary); font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size: 12px; line-height: 20px; text-overflow: ellipsis; white-space: nowrap; }
 .data-permission-other-app-config .ant-typography { margin-top: 0; }
 .data-permission-footer { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .data-permission-modal .ant-modal-title,
@@ -659,7 +678,7 @@ body { color: var(--color-text); background: var(--color-page-bg); font-family: 
 .permission-modal .ant-modal-header { margin-bottom: 4px; }
 .permission-modal .ant-modal-body { display: flex; min-height: 0; flex: 1; flex-direction: column; padding: 0; overflow: visible; }
 .permission-modal-content { display: flex; min-height: 0; flex: 1; flex-direction: column; gap: 24px; }
-.permission-role-viewport { position: relative; z-index: 1; width: 100%; height: 392px; min-height: 392px; flex: 0 0 392px; margin-top: -8px; margin-inline-end: -20px; overflow: hidden; border: 1px solid var(--color-border); border-radius: 8px; }
+.permission-role-viewport { position: relative; z-index: 1; width: 100%; min-height: 0; flex: 1 1 auto; margin-top: -8px; margin-inline-end: -20px; overflow: hidden; border: 1px solid var(--color-border); border-radius: 8px; }
 .permission-role-list { width: 100%; height: 100%; min-height: 0; overflow: auto; scrollbar-width: none; }
 .permission-role-list::-webkit-scrollbar { display: none; }
 .permission-role-list > .ant-collapse { border: 0; border-radius: 0; }

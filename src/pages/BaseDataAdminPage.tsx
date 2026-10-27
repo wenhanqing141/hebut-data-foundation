@@ -1,4 +1,4 @@
-import { Alert, Button, Card, Checkbox, Collapse, Divider, Empty, Flex, Input, Menu, Modal, Pagination, Rate, Select, Space, Switch, Table, Tag, Tooltip, Tree, Typography } from "antd";
+import { Alert, Button, Card, Checkbox, Collapse, Divider, Empty, Flex, Input, message, Modal, Pagination, Rate, Select, Space, Switch, Table, Tag, Tooltip, Tree, Typography } from "antd";
 import type { DataNode } from "antd/es/tree";
 import {
   Check as CheckOutlined,
@@ -26,17 +26,14 @@ import {
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { OverflowTooltip } from "../components/OverflowTooltip";
+import { BaseDataNavigationMenu } from "../components/BaseDataNavigationMenu";
+import type { BaseDataNavigationMenuNode } from "../components/BaseDataNavigationMenu";
+import { baseDataNavigation, baseDataNavigationDefaultOpenKeys } from "../data/baseDataNavigation";
 import { AppShell } from "../layouts/AppShell";
 
 const modalCloseIcon = <CloseOutlined size={20} />;
 
-type NavigationNode = {
-  key: string;
-  title: string;
-  kind: "category" | "table";
-  icon: ReactNode;
-  children?: NavigationNode[];
-};
+type NavigationNode = BaseDataNavigationMenuNode;
 
 type PermissionRoleOption = {
   key: string;
@@ -47,81 +44,15 @@ type PermissionRoleGroup = PermissionRoleOption & {
   roleKeys: string[];
 };
 
-const firstLevelCategories = [
-  "学校基本信息",
-  "办学基本条件",
-  "思政教育情况",
-  "教职工基本信息",
-  "学生基本信息",
-  "学科专业基本信息",
-];
-
-const childIndexes = [1, 2];
-
-function createNavigationNode(key: string, title: string, level: number): NavigationNode {
-  if (level === 4) {
-    return { key, title, kind: "table", icon: <NotesOutlined /> };
-  }
-
-  return {
-    key,
-    title,
-    kind: "category",
-    icon: <NotesOutlined />,
-    children: childIndexes.map((index) => {
-      const childKey = `${key}-${index}`;
-      const childTitle = level === 3 ? `${title}表单` : `${title}子级`;
-      return createNavigationNode(childKey, childTitle, level + 1);
-    }),
-  };
+function decorateNavigationNodes(nodes: typeof baseDataNavigation): NavigationNode[] {
+  return nodes.map((node) => ({
+    ...node,
+    icon: node.kind === "table" ? <NotesOutlined /> : <ApartmentOutlined />,
+    children: node.children ? decorateNavigationNodes(node.children) : undefined,
+  }));
 }
 
-function createNavigationChildren(keyPrefix = ""): NavigationNode[] {
-  return firstLevelCategories.slice(0, 2).map((title, index) => createNavigationNode(`${keyPrefix}level-${index + 1}`, title, 1));
-}
-
-function createBaseDataTableNode(key: string, childKeyPrefix = ""): NavigationNode {
-  return {
-    key,
-    title: "学生处",
-    kind: "category",
-    icon: <NotesOutlined />,
-    children: createNavigationChildren(childKeyPrefix),
-  };
-}
-
-function createSingleNavigationPath(keyPrefix: string, titles: readonly string[], index = 0): NavigationNode {
-  const title = titles[index];
-  if (index === titles.length - 1) {
-    return { key: `${keyPrefix}${index + 1}`, title, kind: "table", icon: <NotesOutlined /> };
-  }
-
-  return {
-    key: `${keyPrefix}${index + 1}`,
-    title,
-    kind: "category",
-    icon: <ApartmentOutlined />,
-    children: [createSingleNavigationPath(keyPrefix, titles, index + 1)],
-  };
-}
-
-const additionalNavigationGroups = [
-  { key: "hr", title: "人事处", path: ["人事基础数据", "人员档案", "职工信息", "职工表单"] },
-  { key: "academic", title: "教务处", path: ["教务基础数据", "教学计划", "课程信息", "课程表单"] },
-  { key: "research-office", title: "科研处", path: ["科研基础数据", "项目管理", "成果信息", "成果表单"] },
-  { key: "finance-office", title: "财务处", path: ["财务基础数据", "预算管理", "资产信息", "资产表单"] },
-];
-
-const navigationData: NavigationNode[] = [
-  createBaseDataTableNode("root"),
-  ...additionalNavigationGroups.map((group) => ({
-    key: group.key,
-    title: group.title,
-    kind: "category" as const,
-    icon: <NotesOutlined />,
-    children: [createSingleNavigationPath(`${group.key}-`, group.path)],
-  })),
-];
+const navigationData = decorateNavigationNodes(baseDataNavigation);
 
 function getExpandableNavigationKeys(nodes: NavigationNode[]): string[] {
   return nodes.flatMap((node) => node.children ? [node.key, ...getExpandableNavigationKeys(node.children)] : []);
@@ -142,7 +73,7 @@ function findFirstFormNavigationNode(nodes: NavigationNode[]): NavigationNode | 
   return undefined;
 }
 
-const defaultOpenNavigationKeys = ["root", "level-2", "level-2-1", "level-2-1-1"];
+const defaultOpenNavigationKeys = baseDataNavigationDefaultOpenKeys;
 
 const emptyNavigationData: NavigationNode[] = [
   { key: "root", title: "学生处", kind: "category", icon: <NotesOutlined /> },
@@ -571,135 +502,6 @@ function DataTableWorkspace() {
   );
 }
 
-function NavigationMenu({
-  nodes,
-  selectedKey,
-  openKeys,
-  onSelect,
-  onOpenChange,
-  onEdit,
-  onDelete,
-  showActions = true,
-}: {
-  nodes: NavigationNode[];
-  selectedKey: string;
-  openKeys: string[];
-  onSelect: (key: string) => void;
-  onOpenChange: (keys: string[]) => void;
-  onEdit: (node: NavigationNode) => void;
-  onDelete: (node: NavigationNode) => void;
-  showActions?: boolean;
-}) {
-  const navigationScrollRef = useRef<HTMLDivElement>(null);
-  const [navigationScrollbar, setNavigationScrollbar] = useState({ trackHeight: 0, thumbHeight: 0, thumbOffset: 0 });
-
-  useLayoutEffect(() => {
-    const scrollElement = navigationScrollRef.current;
-    if (!scrollElement) return;
-
-    const updateScrollbar = () => {
-      const trackHeight = Math.max(scrollElement.clientHeight - 8, 0);
-      const scrollableHeight = Math.max(scrollElement.scrollHeight - scrollElement.clientHeight, 0);
-      if (trackHeight <= 0 || scrollableHeight <= 0) {
-        setNavigationScrollbar({ trackHeight: 0, thumbHeight: 0, thumbOffset: 0 });
-        return;
-      }
-      const thumbHeight = Math.max((scrollElement.clientHeight / scrollElement.scrollHeight) * trackHeight, 24);
-      const maxThumbOffset = Math.max(trackHeight - thumbHeight, 0);
-      setNavigationScrollbar({
-        trackHeight,
-        thumbHeight,
-        thumbOffset: maxThumbOffset * (scrollElement.scrollTop / scrollableHeight),
-      });
-    };
-
-    updateScrollbar();
-    scrollElement.addEventListener("scroll", updateScrollbar, { passive: true });
-    const resizeObserver = new ResizeObserver(updateScrollbar);
-    resizeObserver.observe(scrollElement);
-    return () => {
-      scrollElement.removeEventListener("scroll", updateScrollbar);
-      resizeObserver.disconnect();
-    };
-  }, [nodes, openKeys]);
-
-  const handleNavigationScrollbarPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
-    const scrollElement = navigationScrollRef.current;
-    const maxThumbOffset = navigationScrollbar.trackHeight - navigationScrollbar.thumbHeight;
-    const scrollableHeight = scrollElement ? scrollElement.scrollHeight - scrollElement.clientHeight : 0;
-    if (!scrollElement || maxThumbOffset <= 0 || scrollableHeight <= 0) return;
-
-    event.preventDefault();
-    const startY = event.clientY;
-    const startScrollTop = scrollElement.scrollTop;
-    const handlePointerMove = (moveEvent: PointerEvent) => {
-      scrollElement.scrollTop = startScrollTop + ((moveEvent.clientY - startY) / maxThumbOffset) * scrollableHeight;
-    };
-    const handlePointerUp = () => {
-      window.removeEventListener("pointermove", handlePointerMove);
-      window.removeEventListener("pointerup", handlePointerUp);
-    };
-    window.addEventListener("pointermove", handlePointerMove);
-    window.addEventListener("pointerup", handlePointerUp, { once: true });
-  };
-
-  const totalFormNavigationCount = countFormNavigationNodes(nodes);
-  const toItems = (items: NavigationNode[], depth = 0): NonNullable<React.ComponentProps<typeof Menu>["items"]> => items.map((node) => ({
-    key: node.key,
-    className: `nav-menu-depth-${depth}${selectedKey === node.key ? " nav-menu-node-selected" : ""}`,
-    onTitleClick: node.children ? () => onSelect(node.key) : undefined,
-    label: (
-      <span className={`nav-menu-label${selectedKey === node.key ? " nav-menu-label-selected" : ""}`}>
-        {node.children && <span className="nav-menu-arrow">{openKeys.includes(node.key) ? <UpOutlined /> : <DownOutlined />}</span>}
-        {!node.children && <span className="nav-menu-icon">{node.icon}</span>}
-        <OverflowTooltip title={node.title} className="nav-menu-text">{node.title}</OverflowTooltip>
-        {showActions && (
-          <span className="nav-menu-actions" onMouseDown={(event) => event.stopPropagation()} onClick={(event) => event.stopPropagation()}>
-            <Button type="text" size="small" icon={<EditOutlined />} title="编辑导航名称" aria-label={`编辑${node.title}`} onClick={() => onEdit(node)} />
-            <Button
-              type="text"
-              size="small"
-              danger
-              icon={<DeleteOutlined />}
-              title="删除导航项"
-              aria-label={`删除${node.title}`}
-              disabled={node.kind === "table" && totalFormNavigationCount <= 1}
-              onClick={() => onDelete(node)}
-            />
-          </span>
-        )}
-      </span>
-    ),
-    children: node.children ? toItems(node.children, depth + 1) : undefined,
-  }));
-
-  return (
-    <div className="nav-menu-viewport">
-      <div ref={navigationScrollRef} className="nav-menu-scroll">
-        <Menu
-          className="nav-menu"
-          mode="inline"
-          items={toItems(nodes)}
-          selectedKeys={[selectedKey]}
-          openKeys={openKeys}
-          onOpenChange={(keys) => onOpenChange(keys as string[])}
-          onClick={({ key }) => onSelect(String(key))}
-          expandIcon={null}
-        />
-      </div>
-      {navigationScrollbar.thumbHeight > 0 && (
-        <div className="nav-menu-floating-scrollbar" style={{ height: navigationScrollbar.trackHeight }} aria-hidden="true">
-          <div
-            className="nav-menu-floating-scrollbar-thumb"
-            style={{ height: navigationScrollbar.thumbHeight, transform: `translateY(${navigationScrollbar.thumbOffset}px)` }}
-            onPointerDown={handleNavigationScrollbarPointerDown}
-          />
-        </div>
-      )}
-    </div>
-  );
-}
-
 export function BaseDataAdminPage({ frontend = false }: { frontend?: boolean } = {}) {
   const [mode, setMode] = useState<"empty" | "ready">("ready");
   const [navigationNodes, setNavigationNodes] = useState<NavigationNode[]>(navigationData);
@@ -734,6 +536,9 @@ export function BaseDataAdminPage({ frontend = false }: { frontend?: boolean } =
   const [enableModalOpen, setEnableModalOpen] = useState(false);
   const [disableModalOpen, setDisableModalOpen] = useState(false);
   const [tableDeleted, setTableDeleted] = useState(false);
+  const [deleteFormOpen, setDeleteFormOpen] = useState(false);
+  const [deleteFormName, setDeleteFormName] = useState("");
+  const [deleteFormNameError, setDeleteFormNameError] = useState(false);
   const currentTableTitle = findNavigationNode(navigationNodes, selectedNavKey)?.title || "校领导信息";
   const permissionTreeData = navigationToPermissionTree(navigationNodes);
   const navigationDeleteNode = findNavigationNode(navigationNodes, navigationDeleteKey);
@@ -898,11 +703,24 @@ export function BaseDataAdminPage({ frontend = false }: { frontend?: boolean } =
     setTableDeleted(false);
     setMode("ready");
   };
+  const openDeleteForm = () => {
+    setDeleteFormName("");
+    setDeleteFormNameError(false);
+    setDeleteFormOpen(true);
+  };
   const handleDeleteForm = () => {
+    if (deleteFormName.trim() !== currentTableTitle) {
+      setDeleteFormNameError(true);
+      return;
+    }
     setTableDeleted(true);
     setEnabled(false);
     setEnableModalOpen(false);
     setDisableModalOpen(false);
+    setDeleteFormOpen(false);
+    setDeleteFormName("");
+    setDeleteFormNameError(false);
+    message.success("表单已删除");
   };
   const openNavigationModal = (type: "sibling" | "child") => {
     setNavigationModalType(type);
@@ -1090,7 +908,7 @@ export function BaseDataAdminPage({ frontend = false }: { frontend?: boolean } =
             </Space>
           )}
         >
-          <NavigationMenu
+          <BaseDataNavigationMenu
             nodes={mode === "empty" ? emptyNavigationData : navigationNodes}
             selectedKey={mode === "empty" ? "root" : selectedNavKey}
             openKeys={mode === "empty" ? [] : openNavKeys}
@@ -1136,7 +954,7 @@ export function BaseDataAdminPage({ frontend = false }: { frontend?: boolean } =
                     <Typography.Text className="api-switch-label">{enabled ? "启用中" : "未启用"}</Typography.Text>
                     <Divider type="vertical" className="workspace-action-divider" />
                     <Button type="text" icon={<EditOutlined size={16} />}>修改表单</Button>
-                    <Button type="text" icon={<DeleteOutlined size={16} />} danger onClick={handleDeleteForm}>删除表单</Button>
+                    <Button type="text" icon={<DeleteOutlined size={16} />} danger onClick={openDeleteForm}>删除表单</Button>
                   </Space>
                 )}
               </div>
@@ -1209,6 +1027,42 @@ export function BaseDataAdminPage({ frontend = false }: { frontend?: boolean } =
             description={<>确认要停用「{currentTableTitle}」吗？如后续需要再次开放，可以在本页面<strong>重新启用</strong></>}
           />
         </Space>
+      </Modal>
+      <Modal
+        open={deleteFormOpen}
+        width={480}
+        centered
+        className="destructive-confirm-modal"
+        title="删除表单"
+        closeIcon={modalCloseIcon}
+        onCancel={() => {
+          setDeleteFormOpen(false);
+          setDeleteFormName("");
+          setDeleteFormNameError(false);
+        }}
+        onOk={handleDeleteForm}
+        okText="确认删除"
+        cancelText="取消"
+        okButtonProps={{ danger: true, style: { width: 88 } }}
+        cancelButtonProps={{ style: { width: 88 } }}
+      >
+        <div className="delete-form-confirm-content">
+          <Typography.Paragraph className="modal-title-hint">
+            删除后不可恢复，请输入表单名称「{currentTableTitle}」以确认删除
+          </Typography.Paragraph>
+          <Input
+            autoFocus
+            status={deleteFormNameError ? "error" : undefined}
+            placeholder={`请输入表单名称：${currentTableTitle}`}
+            value={deleteFormName}
+            onChange={(event) => {
+              setDeleteFormName(event.target.value);
+              setDeleteFormNameError(false);
+            }}
+            onPressEnter={handleDeleteForm}
+          />
+          {deleteFormNameError && <Typography.Text type="danger">输入的表单名称与当前表单不一致</Typography.Text>}
+        </div>
       </Modal>
       <Modal
         open={navigationModalOpen}

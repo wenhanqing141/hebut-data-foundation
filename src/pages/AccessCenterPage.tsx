@@ -3,6 +3,9 @@ import { AllApplication, ApiApp, Clear as ClearOutlined, Close as CloseOutlined,
 import { useLayoutEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { OverflowTooltip } from "../components/OverflowTooltip";
+import { BaseDataNavigationMenu } from "../components/BaseDataNavigationMenu";
+import type { BaseDataNavigationMenuNode } from "../components/BaseDataNavigationMenu";
+import { baseDataNavigation, baseDataNavigationDefaultOpenKeys, getBaseDataNavigationTableNodes } from "../data/baseDataNavigation";
 import { FixedCalendar } from "../components/FixedCalendar";
 import { AppShell } from "../layouts/AppShell";
 
@@ -65,9 +68,10 @@ type BaseDataLogRecord = {
   time: string;
   user: string;
   action: "查询" | "新增" | "修改" | "删除";
-  category: string;
+  path: "接口" | "内部触发器" | "选择数据" | "数据联动" | "关联其他表单";
   target: string;
   detail: string;
+  affectedCount: number;
   ip: string;
   result: LogResult;
   records: { id: string; name: string; logs: { time: string; action: string; user: string; detail: string }[] }[];
@@ -95,16 +99,16 @@ type AuthorizationLogRecord = {
 };
 
 const baseDataLogRows: BaseDataLogRecord[] = [
-  { key: "base-01", time: "2026-06-24 09:12:33", user: "张伟", action: "查询", category: "组织人员", target: "用户信息表", detail: "查询列表，条件：部门=当前用户部门及下级", ip: "10.12.33.45", result: "成功", records: [] },
-  { key: "base-02", time: "2026-06-24 09:18:07", user: "李娜", action: "新增", category: "组织人员", target: "用户信息表", detail: "新增记录 3 条", ip: "10.12.33.71", result: "成功", records: [{ id: "100234", name: "张三（教务处 / 教师）", logs: [{ time: "2026-06-24 09:18:07", action: "新增", user: "李娜", detail: "新增用户“张三”" }, { time: "2026-06-24 11:02:14", action: "修改", user: "张伟", detail: "修改岗位：讲师 → 副教授" }] }, { id: "100235", name: "李四（财务处 / 会计）", logs: [{ time: "2026-06-24 09:18:07", action: "新增", user: "李娜", detail: "新增用户“李四”" }] }, { id: "100236", name: "王五（人事处 / 干事）", logs: [{ time: "2026-06-24 09:18:07", action: "新增", user: "李娜", detail: "新增用户“王五”" }] }] },
-  { key: "base-03", time: "2026-06-24 09:24:42", user: "王强", action: "修改", category: "客户主数据", target: "客户表", detail: "修改字段“客户等级”", ip: "10.12.34.12", result: "成功", records: [{ id: "200011", name: "石家庄宏远科技有限公司", logs: [{ time: "2026-06-24 09:24:42", action: "修改", user: "王强", detail: "客户等级：A → B" }, { time: "2026-06-20 14:08:21", action: "新增", user: "王强", detail: "新增客户“石家庄宏远科技有限公司”" }] }] },
-  { key: "base-04", time: "2026-06-24 09:31:19", user: "赵敏", action: "删除", category: "客户主数据", target: "客户联系人表", detail: "删除记录 2 条", ip: "10.12.34.28", result: "成功", records: [{ id: "200145", name: "联系人：刘经理", logs: [{ time: "2026-06-24 09:31:19", action: "删除", user: "赵敏", detail: "删除联系人“刘经理”" }] }, { id: "200146", name: "联系人：孙主管", logs: [{ time: "2026-06-24 09:31:19", action: "删除", user: "赵敏", detail: "删除联系人“孙主管”" }] }] },
-  { key: "base-05", time: "2026-06-24 09:44:55", user: "陈杰", action: "新增", category: "供应链", target: "供应商表", detail: "新增记录 1 条", ip: "10.12.35.06", result: "成功", records: [{ id: "300102", name: "河北恒信电子有限公司", logs: [{ time: "2026-06-24 09:44:55", action: "新增", user: "陈杰", detail: "新增供应商“河北恒信电子有限公司”" }] }] },
-  { key: "base-06", time: "2026-06-24 09:52:02", user: "刘洋", action: "查询", category: "供应链", target: "物料表", detail: "导出数据 50 条", ip: "10.12.35.33", result: "成功", records: [] },
-  { key: "base-07", time: "2026-06-24 10:03:38", user: "周涛", action: "修改", category: "组织人员", target: "组织部门表", detail: "修改部门名称", ip: "10.12.36.17", result: "失败", records: [{ id: "100089", name: "临时测试部", logs: [{ time: "2026-06-24 10:03:38", action: "修改", user: "周涛", detail: "部门名称：临时测试部 → 测试部（操作失败）" }] }] },
-  { key: "base-08", time: "2026-06-24 10:14:11", user: "吴静", action: "新增", category: "客户主数据", target: "客户地址表", detail: "新增记录 3 条", ip: "10.12.36.44", result: "成功", records: [{ id: "200331", name: "石家庄市裕华区XX路1号", logs: [{ time: "2026-06-24 10:14:11", action: "新增", user: "吴静", detail: "新增客户地址" }] }, { id: "200332", name: "石家庄市长安区XX街2号", logs: [{ time: "2026-06-24 10:14:11", action: "新增", user: "吴静", detail: "新增客户地址" }] }, { id: "200333", name: "石家庄市桥西区XX巷3号", logs: [{ time: "2026-06-24 10:14:11", action: "新增", user: "吴静", detail: "新增客户地址" }] }] },
-  { key: "base-09", time: "2026-06-24 10:21:26", user: "郑凯", action: "删除", category: "供应链", target: "仓库表", detail: "删除记录 1 条", ip: "10.12.37.02", result: "成功", records: [{ id: "500034", name: "南区临时仓", logs: [{ time: "2026-06-24 10:21:26", action: "删除", user: "郑凯", detail: "删除仓库“南区临时仓”" }] }] },
-  { key: "base-10", time: "2026-06-24 10:33:49", user: "孙丽", action: "查询", category: "组织人员", target: "岗位表", detail: "查询列表", ip: "10.12.37.19", result: "成功", records: [] },
+  { key: "base-01", time: "2026-06-24 09:12:33", user: "张伟", action: "查询", path: "接口", target: "用户信息表", detail: "查询列表，条件：部门=当前用户部门及下级", affectedCount: 18, ip: "10.12.33.45", result: "成功", records: [] },
+  { key: "base-02", time: "2026-06-24 09:18:07", user: "李娜", action: "新增", path: "内部触发器", target: "用户信息表", detail: "新增记录 3 条", affectedCount: 3, ip: "10.12.33.71", result: "成功", records: [{ id: "100234", name: "张三（教务处 / 教师）", logs: [{ time: "2026-06-24 09:18:07", action: "新增", user: "李娜", detail: "新增用户“张三”" }, { time: "2026-06-24 11:02:14", action: "修改", user: "张伟", detail: "修改岗位：讲师 → 副教授" }] }, { id: "100235", name: "李四（财务处 / 会计）", logs: [{ time: "2026-06-24 09:18:07", action: "新增", user: "李娜", detail: "新增用户“李四”" }] }, { id: "100236", name: "王五（人事处 / 干事）", logs: [{ time: "2026-06-24 09:18:07", action: "新增", user: "李娜", detail: "新增用户“王五”" }] }] },
+  { key: "base-03", time: "2026-06-24 09:24:42", user: "王强", action: "修改", path: "选择数据", target: "客户表", detail: "修改字段“客户等级”", affectedCount: 1, ip: "10.12.34.12", result: "成功", records: [{ id: "200011", name: "石家庄宏远科技有限公司", logs: [{ time: "2026-06-24 09:24:42", action: "修改", user: "王强", detail: "客户等级：A → B" }, { time: "2026-06-20 14:08:21", action: "新增", user: "王强", detail: "新增客户“石家庄宏远科技有限公司”" }] }] },
+  { key: "base-04", time: "2026-06-24 09:31:19", user: "赵敏", action: "删除", path: "数据联动", target: "客户联系人表", detail: "删除记录 2 条", affectedCount: 2, ip: "10.12.34.28", result: "成功", records: [{ id: "200145", name: "联系人：刘经理", logs: [{ time: "2026-06-24 09:31:19", action: "删除", user: "赵敏", detail: "删除联系人“刘经理”" }] }, { id: "200146", name: "联系人：孙主管", logs: [{ time: "2026-06-24 09:31:19", action: "删除", user: "赵敏", detail: "删除联系人“孙主管”" }] }] },
+  { key: "base-05", time: "2026-06-24 09:44:55", user: "陈杰", action: "新增", path: "关联其他表单", target: "供应商表", detail: "新增记录 1 条", affectedCount: 1, ip: "10.12.35.06", result: "成功", records: [{ id: "300102", name: "河北恒信电子有限公司", logs: [{ time: "2026-06-24 09:44:55", action: "新增", user: "陈杰", detail: "新增供应商“河北恒信电子有限公司”" }] }] },
+  { key: "base-06", time: "2026-06-24 09:52:02", user: "刘洋", action: "查询", path: "接口", target: "物料表", detail: "导出数据 50 条", affectedCount: 50, ip: "10.12.35.33", result: "成功", records: [] },
+  { key: "base-07", time: "2026-06-24 10:03:38", user: "周涛", action: "修改", path: "内部触发器", target: "组织部门表", detail: "修改部门名称", affectedCount: 1, ip: "10.12.36.17", result: "失败", records: [{ id: "100089", name: "临时测试部", logs: [{ time: "2026-06-24 10:03:38", action: "修改", user: "周涛", detail: "部门名称：临时测试部 → 测试部（操作失败）" }] }] },
+  { key: "base-08", time: "2026-06-24 10:14:11", user: "吴静", action: "新增", path: "选择数据", target: "客户地址表", detail: "新增记录 3 条", affectedCount: 3, ip: "10.12.36.44", result: "成功", records: [{ id: "200331", name: "石家庄市裕华区XX路1号", logs: [{ time: "2026-06-24 10:14:11", action: "新增", user: "吴静", detail: "新增客户地址" }] }, { id: "200332", name: "石家庄市长安区XX街2号", logs: [{ time: "2026-06-24 10:14:11", action: "新增", user: "吴静", detail: "新增客户地址" }] }, { id: "200333", name: "石家庄市桥西区XX巷3号", logs: [{ time: "2026-06-24 10:14:11", action: "新增", user: "吴静", detail: "新增客户地址" }] }] },
+  { key: "base-09", time: "2026-06-24 10:21:26", user: "郑凯", action: "删除", path: "数据联动", target: "仓库表", detail: "删除记录 1 条", affectedCount: 1, ip: "10.12.37.02", result: "成功", records: [{ id: "500034", name: "南区临时仓", logs: [{ time: "2026-06-24 10:21:26", action: "删除", user: "郑凯", detail: "删除仓库“南区临时仓”" }] }] },
+  { key: "base-10", time: "2026-06-24 10:33:49", user: "孙丽", action: "查询", path: "关联其他表单", target: "岗位表", detail: "查询列表", affectedCount: 12, ip: "10.12.37.19", result: "成功", records: [] },
 ];
 
 const dataTableLogRows: DataTableLogRecord[] = [
@@ -142,11 +146,12 @@ const generatedLogTime = (index: number) => {
 };
 
 const generatedBaseActions: BaseDataLogRecord["action"][] = ["查询", "新增", "修改", "删除"];
-const generatedBaseTargets = [
-  { category: "组织人员", target: "用户信息表" },
-  { category: "客户主数据", target: "客户表" },
-  { category: "供应链", target: "供应商表" },
-  { category: "组织人员", target: "岗位表" },
+const generatedBaseTargets: Array<Pick<BaseDataLogRecord, "path" | "target">> = [
+  { path: "接口", target: "用户信息表" },
+  { path: "内部触发器", target: "客户表" },
+  { path: "选择数据", target: "供应商表" },
+  { path: "数据联动", target: "岗位表" },
+  { path: "关联其他表单", target: "组织部门表" },
 ];
 baseDataLogRows.push(...Array.from({ length: 50 }, (_, index) => {
   const serial = String(index + 11).padStart(3, "0");
@@ -158,9 +163,10 @@ baseDataLogRows.push(...Array.from({ length: 50 }, (_, index) => {
     time: generatedLogTime(index),
     user: generatedLogUsers[index % generatedLogUsers.length],
     action,
-    category: target.category,
+    path: target.path,
     target: target.target,
     detail: `${action}${target.target}（示例记录 ${serial}）`,
+    affectedCount: index % 9 + 1,
     ip: `10.12.${40 + (index % 10)}.${100 + index}`,
     result,
     records: [],
@@ -388,7 +394,7 @@ function AssociationTable({ rows, type, appName, selectedKeys, linkedKeys, allSe
         columns={[
           { title: <Checkbox aria-label="全选当前页" checked={allSelected} indeterminate={someSelected} disabled={!selectable} onChange={(event) => onSelectPage(event.target.checked)} />, key: "selection", width: 48, render: (_value, row) => <Checkbox aria-label={`选择${row.name}`} checked={selectedKeys.includes(row.key)} disabled={Boolean(row.linkedTo && row.linkedTo !== appName)} onChange={(event) => onSelectRow(row, event.target.checked)} /> },
           { title: type === "form" ? "表单名称" : "审批名称", dataIndex: "name", key: "name", ellipsis: true, render: (value: string) => <OverflowTooltip title={value} className="association-item-name">{value}</OverflowTooltip> },
-          { title: "状态", key: "status", width: 160, render: (_value, row) => {
+          { title: "关联状态", key: "status", width: 160, render: (_value, row) => {
             const linkedElsewhere = Boolean(row.linkedTo && row.linkedTo !== appName);
             const linked = linkedElsewhere || linkedKeys.includes(row.key);
             const statusLabel = linkedElsewhere ? row.linkedTo : linked ? "已关联" : "未关联";
@@ -410,29 +416,68 @@ function AssociationTable({ rows, type, appName, selectedKeys, linkedKeys, allSe
 type PermissionApiKey = "create" | "delete" | "update" | "read";
 type PermissionCondition = { field: string; operator: string; value: string };
 type PermissionField = { key: string; label: string; sensitive?: boolean };
-type PermissionTable = { key: string; domain: string; name: string; rows: string; fields: PermissionField[] };
+type PermissionTable = { key: string; name: string; rows: string; fields: PermissionField[] };
 type PermissionApiState = Record<PermissionApiKey, boolean>;
 
 const permissionApis: Array<{ key: PermissionApiKey; label: string }> = [
-  { key: "create", label: "新增" },
-  { key: "delete", label: "删除" },
-  { key: "update", label: "更新" },
-  { key: "read", label: "查询" },
+  { key: "create", label: "新增数据" },
+  { key: "delete", label: "删除数据" },
+  { key: "update", label: "更新数据" },
+  { key: "read", label: "查询数据" },
 ];
 
-const permissionTables: PermissionTable[] = [
-  { key: "user_info", domain: "组织人员", name: "用户信息表", rows: "12,480", fields: [{ key: "id", label: "主键ID" }, { key: "emp_no", label: "工号" }, { key: "name", label: "姓名" }, { key: "dept_name", label: "部门名称" }, { key: "position", label: "岗位" }, { key: "mobile", label: "手机号", sensitive: true }, { key: "email", label: "邮箱", sensitive: true }, { key: "status", label: "状态" }] },
-  { key: "org_dept", domain: "组织人员", name: "组织部门表", rows: "386", fields: [{ key: "id", label: "主键ID" }, { key: "dept_code", label: "部门编码" }, { key: "dept_name", label: "部门名称" }, { key: "parent_id", label: "上级部门ID" }, { key: "leader", label: "负责人" }, { key: "phone", label: "联系电话", sensitive: true }, { key: "sort", label: "排序" }, { key: "status", label: "状态" }] },
-  { key: "course", domain: "教学管理", name: "课程信息表", rows: "2,846", fields: [{ key: "id", label: "主键ID" }, { key: "course_code", label: "课程编码" }, { key: "course_name", label: "课程名称" }, { key: "teacher", label: "授课教师" }, { key: "semester", label: "学期" }, { key: "status", label: "状态" }] },
-  { key: "customer", domain: "客户主数据", name: "客户表", rows: "8,932", fields: [{ key: "id", label: "主键ID" }, { key: "cust_code", label: "客户编码" }, { key: "cust_name", label: "客户名称" }, { key: "level", label: "客户等级" }, { key: "owner", label: "负责人" }, { key: "contact", label: "联系人" }, { key: "contact_mobile", label: "联系人手机", sensitive: true }] },
-  { key: "supplier", domain: "供应链", name: "供应商表", rows: "1,204", fields: [{ key: "id", label: "主键ID" }, { key: "sup_code", label: "供应商编码" }, { key: "sup_name", label: "供应商名称" }, { key: "contact", label: "联系人" }, { key: "phone", label: "联系电话", sensitive: true }, { key: "level", label: "等级" }] },
+const defaultPermissionFields: PermissionField[] = [
+  { key: "id", label: "主键ID" },
+  { key: "code", label: "编码" },
+  { key: "name", label: "名称" },
+  { key: "department", label: "所属部门" },
+  { key: "contact", label: "联系人", sensitive: true },
+  { key: "status", label: "状态" },
 ];
+
+const permissionTables: PermissionTable[] = getBaseDataNavigationTableNodes().map((node, index) => ({
+  key: node.key,
+  name: node.title,
+  rows: String(386 + index * 127),
+  fields: defaultPermissionFields,
+}));
+
+const defaultPermissionTableKey = permissionTables[0].key;
+
+function filterPermissionNavigation(nodes: typeof baseDataNavigation, keyword: string): typeof baseDataNavigation {
+  const normalizedKeyword = keyword.trim();
+  if (!normalizedKeyword) return nodes;
+
+  return nodes.flatMap((node) => {
+    const children = node.children ? filterPermissionNavigation(node.children, normalizedKeyword) : [];
+    return node.title.includes(normalizedKeyword) || children.length > 0
+      ? [{ ...node, children: children.length > 0 ? children : node.children }]
+      : [];
+  });
+}
+
+function getPermissionNavigationExpandedKeys(nodes: typeof baseDataNavigation): string[] {
+  return nodes.flatMap((node) => node.children ? [node.key, ...getPermissionNavigationExpandedKeys(node.children)] : []);
+}
+
+function permissionNavigationMenuNodes(nodes: typeof baseDataNavigation): BaseDataNavigationMenuNode[] {
+  return nodes.map((node) => ({
+    key: node.key,
+    title: node.title,
+    kind: node.kind,
+    icon: <Notes size={16} />,
+    children: node.children ? permissionNavigationMenuNodes(node.children) : undefined,
+  }));
+}
+
+function getPermissionNavigationTableKeys(node: BaseDataNavigationMenuNode): string[] {
+  return node.kind === "table" ? [node.key] : (node.children || []).flatMap(getPermissionNavigationTableKeys);
+}
 
 type PermissionOtherInterface = {
   key: string;
   name: string;
   methods: string[];
-  url: string;
 };
 
 type PermissionOtherService = {
@@ -444,19 +489,15 @@ type PermissionOtherService = {
 };
 
 const permissionOtherServices: PermissionOtherService[] = [
-  { key: "send_notice", name: "发送通知", description: "允许应用调用消息通知能力", group: "公共服务" },
-  { key: "academic_api", name: "教务系统", description: "允许应用调用教务系统接口", group: "其他应用", interfaces: [{ key: "score-query", name: "成绩查询", methods: ["GET"], url: "https://jw.example.edu/api/score/query" }, { key: "course-list", name: "课程列表", methods: ["GET", "POST"], url: "https://jw.example.edu/api/course/list" }] },
-  { key: "library_api", name: "图书馆", description: "允许应用调用图书馆接口", group: "其他应用", interfaces: [{ key: "book-search", name: "图书检索", methods: ["GET"], url: "https://library.example.edu/api/book/search" }] },
-  { key: "campus_card_api", name: "校园卡", description: "允许应用调用校园卡接口", group: "其他应用", interfaces: [{ key: "balance-query", name: "余额查询", methods: ["GET"], url: "https://card.example.edu/api/balance/query" }] },
-  { key: "finance_api", name: "财务缴费", description: "允许应用调用财务缴费接口", group: "其他应用", interfaces: [{ key: "payment-query", name: "缴费查询", methods: ["GET"], url: "https://finance.example.edu/api/payment/query" }] },
+  { key: "send_notice", name: "通知", description: "允许应用调用通知能力", group: "公共服务" },
+  { key: "academic_api", name: "教务系统", description: "允许应用调用教务系统接口", group: "其他应用", interfaces: [{ key: "score-query", name: "成绩查询", methods: ["GET"] }, { key: "course-list", name: "课程列表", methods: ["GET", "POST"] }] },
+  { key: "library_api", name: "图书馆", description: "允许应用调用图书馆接口", group: "其他应用", interfaces: [{ key: "book-search", name: "图书检索", methods: ["GET"] }] },
+  { key: "campus_card_api", name: "校园卡", description: "允许应用调用校园卡接口", group: "其他应用", interfaces: [{ key: "balance-query", name: "余额查询", methods: ["GET"] }] },
+  { key: "finance_api", name: "财务缴费", description: "允许应用调用财务缴费接口", group: "其他应用", interfaces: [{ key: "payment-query", name: "缴费查询", methods: ["GET"] }] },
 ];
 
 const notificationChannels = [
-  { key: "email", label: "邮件" },
-  { key: "sms", label: "短信" },
-  { key: "inbox", label: "站内信" },
-  { key: "wechat_work", label: "企业微信" },
-  { key: "dingtalk", label: "钉钉" },
+  { key: "send_notification", label: "发通知" },
 ];
 
 const associationRows: Record<AssociationType, AssociationRow[]> = {
@@ -997,13 +1038,14 @@ function AuditLogWorkspace({ logType }: { logType: AuditLogKey }) {
   };
   const operationTag = (action: string) => <Tag className={`audit-operation-tag ${actionClass(action)}`}>{action}</Tag>;
   const resultTag = (result: LogResult) => <Tag className={`audit-result-tag ${result === "成功" ? "is-success" : "is-failed"}`}>{result}</Tag>;
+  const operationSummary = (record: BaseDataLogRecord) => `${record.action} ${record.affectedCount} 条数据`;
   const commonColumns = [
     { title: "操作时间", dataIndex: "time", key: "time", width: 160, render: (value: string) => <Typography.Text className="audit-time-text">{value}</Typography.Text> },
     { title: "操作人", dataIndex: "user", key: "user", width: 90, render: (value: string) => <OverflowTooltip title={value} className="prototype-table-cell-text">{value}</OverflowTooltip> },
     { title: "操作类型", dataIndex: "action", key: "action", width: 112, render: (value: string) => operationTag(value) },
   ];
   const columns = logType === "log-base"
-    ? [...commonColumns, { title: "数据分类", dataIndex: "category", key: "category", width: 112, render: (value: string) => <OverflowTooltip title={value} className="prototype-table-cell-text">{value}</OverflowTooltip> }, { title: "操作对象", dataIndex: "target", key: "target", width: 136, render: (value: string) => <OverflowTooltip title={value} className="prototype-table-cell-text">{value}</OverflowTooltip> }, { title: "操作详情", dataIndex: "detail", key: "detail", width: 228, render: (value: string) => <OverflowTooltip title={value} className="prototype-table-cell-text">{value}</OverflowTooltip> }, { title: "来源 IP", dataIndex: "ip", key: "ip", width: 122, render: (value: string) => <Typography.Text className="audit-time-text">{value}</Typography.Text> }, { title: "结果", dataIndex: "result", key: "result", width: 88, render: (value: LogResult) => resultTag(value) }, { title: "操作", key: "operations", width: 64, render: (_value: unknown, record: AuditLogRow) => <Button className="prototype-action-button" type="link" size="small" onClick={() => openDetail(record as BaseDataLogRecord)}>查看</Button> }]
+    ? [...commonColumns, { title: "操作途径", dataIndex: "path", key: "path", width: 132, render: (value: string) => <OverflowTooltip title={value} className="prototype-table-cell-text">{value}</OverflowTooltip> }, { title: "操作对象", dataIndex: "target", key: "target", width: 136, render: (value: string) => <OverflowTooltip title={value} className="prototype-table-cell-text">{value}</OverflowTooltip> }, { title: "操作详情", key: "detail", width: 168, render: (_value: unknown, record: AuditLogRow) => <OverflowTooltip title={operationSummary(record as BaseDataLogRecord)} className="prototype-table-cell-text">{operationSummary(record as BaseDataLogRecord)}</OverflowTooltip> }, { title: "来源 IP", dataIndex: "ip", key: "ip", width: 122, render: (value: string) => <Typography.Text className="audit-time-text">{value}</Typography.Text> }, { title: "结果", dataIndex: "result", key: "result", width: 88, render: (value: LogResult) => resultTag(value) }, { title: "操作", key: "operations", width: 64, render: (_value: unknown, record: AuditLogRow) => <Button className="prototype-action-button" type="link" size="small" onClick={() => openDetail(record as BaseDataLogRecord)}>查看</Button> }]
     : logType === "log-table"
       ? [...commonColumns, { title: "数据表", dataIndex: "target", key: "target", width: 144, render: (value: string) => <OverflowTooltip title={value} className="prototype-table-cell-text">{value}</OverflowTooltip> }, { title: "变更详情", dataIndex: "detail", key: "detail", width: 344, render: (value: string) => <OverflowTooltip title={value} className="prototype-table-cell-text">{value}</OverflowTooltip> }, { title: "来源 IP", dataIndex: "ip", key: "ip", width: 122, render: (value: string) => <Typography.Text className="audit-time-text">{value}</Typography.Text> }, { title: "结果", dataIndex: "result", key: "result", width: 88, render: (value: LogResult) => resultTag(value) }]
       : [...commonColumns, { title: "目标应用", dataIndex: "app", key: "app", width: 132, render: (value: string) => <OverflowTooltip title={value} className="prototype-table-cell-text">{value}</OverflowTooltip> }, { title: "授权对象", dataIndex: "target", key: "target", width: 160, render: (value: string) => <OverflowTooltip title={value} className="prototype-table-cell-text">{value}</OverflowTooltip> }, { title: "操作详情", dataIndex: "detail", key: "detail", width: 212, render: (value: string) => <OverflowTooltip title={value} className="prototype-table-cell-text">{value}</OverflowTooltip> }, { title: "来源 IP", dataIndex: "ip", key: "ip", width: 122, render: (value: string) => <Typography.Text className="audit-time-text">{value}</Typography.Text> }, { title: "结果", dataIndex: "result", key: "result", width: 88, render: (value: LogResult) => resultTag(value) }];
@@ -1127,11 +1169,13 @@ function AccessAppsWorkspace() {
   const [associationPageSize, setAssociationPageSize] = useState(10);
   const [permissionOpen, setPermissionOpen] = useState(false);
   const [permissionApp, setPermissionApp] = useState<{ key: React.Key; app: string } | null>(null);
+  const permissionMainScrollRef = useRef<HTMLElement>(null);
+  const [permissionScrollbar, setPermissionScrollbar] = useState({ trackHeight: 0, thumbHeight: 0, thumbOffset: 0 });
   const [permissionMainTab, setPermissionMainTab] = useState<"base" | "other">("base");
   const [permissionKeyword, setPermissionKeyword] = useState("");
-  const [collapsedPermissionDomains, setCollapsedPermissionDomains] = useState<string[]>([]);
-  const [permissionActiveTable, setPermissionActiveTable] = useState("user_info");
-  const [permissionSelectedTables, setPermissionSelectedTables] = useState<string[]>(["user_info"]);
+  const [expandedPermissionNavigationKeys, setExpandedPermissionNavigationKeys] = useState<string[]>(baseDataNavigationDefaultOpenKeys);
+  const [permissionActiveTable, setPermissionActiveTable] = useState(defaultPermissionTableKey);
+  const [permissionSelectedTables, setPermissionSelectedTables] = useState<string[]>([defaultPermissionTableKey]);
   const [permissionApiStates, setPermissionApiStates] = useState<Record<string, PermissionApiState>>({});
   const [expandedPermissionApis, setExpandedPermissionApis] = useState<PermissionApiKey[]>([]);
   const [permissionFields, setPermissionFields] = useState<Record<string, Record<PermissionApiKey, string[]>>>({});
@@ -1139,7 +1183,7 @@ function AccessAppsWorkspace() {
   const [permissionOtherSelected, setPermissionOtherSelected] = useState<string[]>(["send_notice"]);
   const [permissionActiveOtherService, setPermissionActiveOtherService] = useState("send_notice");
   const [collapsedPermissionOtherGroups, setCollapsedPermissionOtherGroups] = useState<string[]>([]);
-  const [permissionNotificationChannels, setPermissionNotificationChannels] = useState<string[]>(["email", "sms"]);
+  const [permissionNotificationChannels, setPermissionNotificationChannels] = useState<string[]>(["send_notification"]);
   const [permissionOtherInterfaceSelections, setPermissionOtherInterfaceSelections] = useState<Record<string, string[]>>({});
   const filteredRows = registeredAppRows.filter((row) => (
     (!appliedFilters.app || row.app.includes(appliedFilters.app))
@@ -1171,13 +1215,14 @@ function AccessAppsWorkspace() {
   const defaultPermissionApiState = (): PermissionApiState => ({ create: false, delete: false, update: false, read: false });
   const activePermissionTable = permissionTables.find((table) => table.key === permissionActiveTable) || permissionTables[0];
   const activePermissionApiState = permissionApiStates[activePermissionTable.key] || defaultPermissionApiState();
-  const filteredPermissionTables = permissionTables.filter((table) => `${table.domain}${table.name}${table.key}`.includes(permissionKeyword.trim()));
+  const filteredPermissionNavigation = filterPermissionNavigation(baseDataNavigation, permissionKeyword);
   const filteredPermissionOtherServices = permissionOtherServices.filter((service) => `${service.name}${service.description}`.includes(permissionKeyword.trim()));
-  const permissionDomains = Array.from(new Set(filteredPermissionTables.map((table) => table.domain)));
   const permissionOtherGroups = Array.from(new Set(filteredPermissionOtherServices.map((service) => service.group)));
   const activePermissionOtherService = permissionOtherServices.find((service) => service.key === permissionActiveOtherService) || permissionOtherServices[0];
   const activePermissionOtherInterfaces = activePermissionOtherService.interfaces || [];
   const activePermissionOtherInterfaceKeys = permissionOtherInterfaceSelections[activePermissionOtherService.key] || [];
+  const allOtherInterfacesSelected = activePermissionOtherInterfaces.length > 0 && activePermissionOtherInterfaceKeys.length === activePermissionOtherInterfaces.length;
+  const someOtherInterfacesSelected = activePermissionOtherInterfaceKeys.length > 0 && !allOtherInterfacesSelected;
   const permissionSelectedCount = permissionSelectedTables.length;
   const permissionApiCount = Object.values(permissionApiStates).reduce((total, state) => total + Object.values(state).filter(Boolean).length, 0);
 
@@ -1185,9 +1230,9 @@ function AccessAppsWorkspace() {
     setPermissionApp({ key: row.key, app: row.app });
     setPermissionMainTab("base");
     setPermissionKeyword("");
-    setCollapsedPermissionDomains([]);
-    setPermissionActiveTable("user_info");
-    setPermissionSelectedTables(["user_info"]);
+    setExpandedPermissionNavigationKeys(baseDataNavigationDefaultOpenKeys);
+    setPermissionActiveTable(defaultPermissionTableKey);
+    setPermissionSelectedTables([defaultPermissionTableKey]);
     setPermissionApiStates(Object.fromEntries(permissionTables.map((table) => [table.key, defaultPermissionApiState()])));
     setPermissionFields({});
     setPermissionConditions({});
@@ -1195,33 +1240,22 @@ function AccessAppsWorkspace() {
     setPermissionOtherSelected(["send_notice"]);
     setPermissionActiveOtherService("send_notice");
     setCollapsedPermissionOtherGroups([]);
-    setPermissionNotificationChannels(["email", "sms"]);
+    setPermissionNotificationChannels(["send_notification"]);
     setPermissionOpen(true);
-  };
-
-  const togglePermissionTable = (tableKey: string, checked: boolean) => {
-    setPermissionSelectedTables((current) => checked ? Array.from(new Set([...current, tableKey])) : current.filter((key) => key !== tableKey));
-    if (checked) setPermissionActiveTable(tableKey);
-  };
-
-  const togglePermissionDomain = (domain: string, checked: boolean) => {
-    const domainTableKeys = permissionTables.filter((table) => table.domain === domain).map((table) => table.key);
-    setPermissionSelectedTables((current) => checked
-      ? Array.from(new Set([...current, ...domainTableKeys]))
-      : current.filter((key) => !domainTableKeys.includes(key)));
-    if (checked) setPermissionActiveTable(domainTableKeys[0]);
-  };
-
-  const togglePermissionDomainCollapse = (domain: string) => {
-    setCollapsedPermissionDomains((current) => current.includes(domain)
-      ? current.filter((item) => item !== domain)
-      : [...current, domain]);
   };
 
   const togglePermissionOtherGroupCollapse = (group: string) => {
     setCollapsedPermissionOtherGroups((current) => current.includes(group)
       ? current.filter((item) => item !== group)
       : [...current, group]);
+  };
+
+  const togglePermissionNavigationNode = (node: BaseDataNavigationMenuNode, checked: boolean) => {
+    const tableKeys = getPermissionNavigationTableKeys(node);
+    setPermissionSelectedTables((current) => checked
+      ? Array.from(new Set([...current, ...tableKeys]))
+      : current.filter((key) => !tableKeys.includes(key)));
+    if (checked && tableKeys.length > 0) setPermissionActiveTable(tableKeys[0]);
   };
 
   const togglePermissionOtherService = (serviceKey: string, checked: boolean) => {
@@ -1243,6 +1277,15 @@ function AccessAppsWorkspace() {
       togglePermissionOtherService("send_notice", next.length > 0);
       return next;
     });
+  };
+
+  const toggleAllPermissionOtherInterfaces = (checked: boolean) => {
+    const interfaceKeys = activePermissionOtherInterfaces.map((api) => api.key);
+    setPermissionOtherInterfaceSelections((current) => ({
+      ...current,
+      [activePermissionOtherService.key]: checked ? interfaceKeys : [],
+    }));
+    togglePermissionOtherService(activePermissionOtherService.key, checked && interfaceKeys.length > 0);
   };
 
   const togglePermissionApi = (apiKey: PermissionApiKey, checked: boolean) => {
@@ -1270,6 +1313,19 @@ function AccessAppsWorkspace() {
         [activePermissionTable.key]: {
           ...tableFields,
           [apiKey]: checked ? Array.from(new Set([...selected, fieldKey])) : selected.filter((key) => key !== fieldKey),
+        },
+      };
+    });
+  };
+
+  const toggleAllPermissionFields = (apiKey: PermissionApiKey, checked: boolean) => {
+    setPermissionFields((current) => {
+      const tableFields = current[activePermissionTable.key] || { create: [], delete: [], update: [], read: [] };
+      return {
+        ...current,
+        [activePermissionTable.key]: {
+          ...tableFields,
+          [apiKey]: checked ? activePermissionTable.fields.map((field) => field.key) : [],
         },
       };
     });
@@ -1420,13 +1476,8 @@ function AccessAppsWorkspace() {
     if (!detailApp) return;
     const applicationInfo = [
       `应用名称：${detailApp.app}`,
-      `应用状态：${detailApp.status}`,
       `appid：${detailApp.appid}`,
       `appkey：${detailApp.appkey}`,
-      `应用负责人：${detailApp.owner}`,
-      `联系方式：${detailApp.phone}`,
-      `是否对外提供接口：${detailApp.externalApi}`,
-      `应用简介：${detailApp.description}`,
     ].join("\n");
     try {
       await navigator.clipboard?.writeText(applicationInfo);
@@ -1731,6 +1782,73 @@ function AccessAppsWorkspace() {
     window.addEventListener("pointerup", handlePointerUp, { once: true });
   };
 
+  useLayoutEffect(() => {
+    if (!permissionOpen) return;
+
+    let frameId = 0;
+    let resizeObserver: ResizeObserver | null = null;
+    const setupPermissionScrollbar = () => {
+      const list = permissionMainScrollRef.current;
+      if (!list) {
+        frameId = window.requestAnimationFrame(setupPermissionScrollbar);
+        return;
+      }
+
+      const updatePermissionScrollbar = () => {
+        const trackHeight = Math.max(0, list.clientHeight - 8);
+        const scrollableHeight = Math.max(0, list.scrollHeight - list.clientHeight);
+        if (trackHeight <= 0 || scrollableHeight <= 0) {
+          setPermissionScrollbar({ trackHeight: 0, thumbHeight: 0, thumbOffset: 0 });
+          return;
+        }
+        const thumbHeight = Math.max(24, trackHeight * list.clientHeight / list.scrollHeight);
+        const maxThumbOffset = Math.max(0, trackHeight - thumbHeight);
+        setPermissionScrollbar({
+          trackHeight,
+          thumbHeight,
+          thumbOffset: maxThumbOffset * (list.scrollTop / scrollableHeight),
+        });
+      };
+
+      list.addEventListener("scroll", updatePermissionScrollbar, { passive: true });
+      updatePermissionScrollbar();
+      resizeObserver = new ResizeObserver(updatePermissionScrollbar);
+      resizeObserver.observe(list);
+      if (list.lastElementChild) resizeObserver.observe(list.lastElementChild);
+
+      return () => {
+        list.removeEventListener("scroll", updatePermissionScrollbar);
+        resizeObserver?.disconnect();
+      };
+    };
+
+    const cleanup = setupPermissionScrollbar();
+    return () => {
+      window.cancelAnimationFrame(frameId);
+      cleanup?.();
+    };
+  }, [permissionOpen, permissionMainTab, permissionActiveTable, permissionActiveOtherService, expandedPermissionApis, permissionApiStates, permissionFields, permissionConditions]);
+
+  const handlePermissionScrollbarPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    const list = permissionMainScrollRef.current;
+    const maxThumbOffset = permissionScrollbar.trackHeight - permissionScrollbar.thumbHeight;
+    const scrollableHeight = list ? list.scrollHeight - list.clientHeight : 0;
+    if (!list || maxThumbOffset <= 0 || scrollableHeight <= 0) return;
+
+    event.preventDefault();
+    const startY = event.clientY;
+    const startScrollTop = list.scrollTop;
+    const handlePointerMove = (moveEvent: PointerEvent) => {
+      list.scrollTop = startScrollTop + ((moveEvent.clientY - startY) / maxThumbOffset) * scrollableHeight;
+    };
+    const handlePointerUp = () => {
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", handlePointerUp);
+    };
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", handlePointerUp, { once: true });
+  };
+
   return (
     <div className="prototype-table-workspace access-apps-workspace">
       <div className="prototype-table-filterbar">
@@ -1923,7 +2041,7 @@ function AccessAppsWorkspace() {
               <Form.Item label="序号" name="code"><Input disabled placeholder="系统自动生成" /></Form.Item>
               <Form.Item label="接口名称" name="name" rules={[{ required: true, message: "请输入接口名称" }]}><Input placeholder="请输入接口名称" /></Form.Item>
               <Form.Item label="调用方式" name="methods" rules={[{ required: true, message: "请选择调用方式" }]}><Checkbox.Group options={["GET", "POST"]} /></Form.Item>
-              <Form.Item label="接口地址" name="url" rules={[{ required: true, message: "请输入接口地址" }, { type: "url", message: "请输入有效的接口地址" }]}><Input placeholder="如/api/user/query" /></Form.Item>
+              <Form.Item label="接口地址" name="url" rules={[{ required: true, message: "请输入完整的接口调用地址" }, { type: "url", message: "请输入有效的接口地址" }]}><Input placeholder="请输入完整的接口调用地址" /></Form.Item>
               <Form.Item label="状态" name="status" rules={[{ required: true, message: "请选择接口状态" }]}><Radio.Group options={[{ value: "启用", label: "启用" }, { value: "停用", label: "停用" }]} /></Form.Item>
               <Form.Item label="接口文档" name="docs"><Input.TextArea autoSize={{ minRows: 4, maxRows: 4 }} placeholder="请填写接口文档地址或说明" /></Form.Item>
             </Form>
@@ -2005,66 +2123,42 @@ function AccessAppsWorkspace() {
                 prefix={<SearchOutlined size={16} />}
                 placeholder={permissionMainTab === "base" ? "搜索表名 / 数据域" : "搜索服务 / 应用"}
                 value={permissionKeyword}
-                onChange={(event) => setPermissionKeyword(event.target.value)}
+                onChange={(event) => {
+                  const keyword = event.target.value;
+                  setPermissionKeyword(keyword);
+                  setExpandedPermissionNavigationKeys(keyword ? getPermissionNavigationExpandedKeys(filterPermissionNavigation(baseDataNavigation, keyword)) : baseDataNavigationDefaultOpenKeys);
+                }}
               />
-              <div className="data-permission-sidebar-list">
               {permissionMainTab === "base" ? (
-                permissionDomains.length > 0 ? permissionDomains.map((domain) => {
-                  const domainTables = filteredPermissionTables.filter((table) => table.domain === domain);
-                  const domainTableKeys = domainTables.map((table) => table.key);
-                  const selectedDomainTableCount = domainTableKeys.filter((key) => permissionSelectedTables.includes(key)).length;
-                  const isDomainSelected = domainTableKeys.length > 0 && selectedDomainTableCount === domainTableKeys.length;
-                  const isDomainIndeterminate = selectedDomainTableCount > 0 && !isDomainSelected;
-                  const isDomainCollapsed = collapsedPermissionDomains.includes(domain);
-
-                  return (
-                  <div className="data-permission-group" key={domain}>
-                    <div className="data-permission-domain-item" onClick={() => togglePermissionDomainCollapse(domain)}>
-                      <Tooltip title={isDomainCollapsed ? "展开" : "收起"}>
-                        <Button
-                          type="text"
-                          size="small"
-                          aria-label={isDomainCollapsed ? `展开${domain}` : `收起${domain}`}
-                          className={`data-permission-domain-toggle${isDomainCollapsed ? " is-collapsed" : ""}`}
-                          icon={<DownOutlined size={16} />}
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            togglePermissionDomainCollapse(domain);
-                          }}
-                        />
-                      </Tooltip>
-                      <Checkbox
-                        checked={isDomainSelected}
-                        indeterminate={isDomainIndeterminate}
-                        onClick={(event) => event.stopPropagation()}
-                        onChange={(event) => togglePermissionDomain(domain, event.target.checked)}
-                      />
-                      <Typography.Text className="data-permission-domain-title">{domain}</Typography.Text>
-                    </div>
-                    {!isDomainCollapsed && <div className="data-permission-domain-children">
-                    {domainTables.map((table) => {
-                      const selected = permissionSelectedTables.includes(table.key);
-                      const active = activePermissionTable.key === table.key;
-                      const apiState = permissionApiStates[table.key] || defaultPermissionApiState();
-                      const selectedApiLabels = permissionApis.filter((api) => apiState[api.key]).map((api) => api.label);
+                filteredPermissionNavigation.length > 0 ? (
+                  <BaseDataNavigationMenu
+                    className="data-permission-navigation-menu"
+                    nodes={permissionNavigationMenuNodes(filteredPermissionNavigation)}
+                    selectedKey={permissionActiveTable}
+                    openKeys={expandedPermissionNavigationKeys}
+                    onOpenChange={setExpandedPermissionNavigationKeys}
+                    onSelect={(key) => {
+                      if (permissionTables.some((table) => table.key === key)) setPermissionActiveTable(key);
+                    }}
+                    renderLeading={(node) => {
+                      const tableKeys = getPermissionNavigationTableKeys(node);
+                      const selectedCount = tableKeys.filter((key) => permissionSelectedTables.includes(key)).length;
                       return (
-                        <div className={`data-permission-table-item${active ? " is-active" : ""}${selected ? " is-selected" : ""}`} key={table.key} onClick={() => setPermissionActiveTable(table.key)}>
-                          <Checkbox checked={selected} onClick={(event) => event.stopPropagation()} onChange={(event) => togglePermissionTable(table.key, event.target.checked)} />
-                          <div className="data-permission-table-item-main">
-                            <OverflowTooltip title={table.name}>{table.name}</OverflowTooltip>
-                          </div>
-                          <Tooltip title={selectedApiLabels.join("、")} disabled={selectedApiLabels.length === 0}>
-                            <div className="data-permission-api-count">{selectedApiLabels.length || ""}</div>
-                          </Tooltip>
-                        </div>
+                        <Checkbox
+                          aria-label={`选择${node.title}`}
+                          checked={tableKeys.length > 0 && selectedCount === tableKeys.length}
+                          indeterminate={selectedCount > 0 && selectedCount < tableKeys.length}
+                          onChange={(event) => togglePermissionNavigationNode(node, event.target.checked)}
+                        />
                       );
-                    })}
-                    </div>}
-                  </div>
-                  );
-                }) : <div className="data-permission-search-empty">暂无搜索结果</div>
+                    }}
+                    selectParent={false}
+                    showActions={false}
+                  />
+                ) : <div className="data-permission-search-empty">暂无搜索结果</div>
               ) : (
-                permissionOtherGroups.length > 0 ? permissionOtherGroups.map((group) => {
+                <div className="data-permission-sidebar-list">
+                  {permissionOtherGroups.length > 0 ? permissionOtherGroups.map((group) => {
                   const groupServices = filteredPermissionOtherServices.filter((service) => service.group === group);
                   const isGroupCollapsed = collapsedPermissionOtherGroups.includes(group);
                   return (
@@ -2105,17 +2199,17 @@ function AccessAppsWorkspace() {
                       })}
                     </div>
                   );
-                }) : <div className="data-permission-search-empty">暂无搜索结果</div>
+                  }) : <div className="data-permission-search-empty">暂无搜索结果</div>}
+                </div>
               )}
-              </div>
             </div>
           </aside>
-          <section className="data-permission-main">
+          <section ref={permissionMainScrollRef} className="data-permission-main">
             {permissionMainTab === "other" ? (
               <>
                 <div className="data-permission-main-heading">
                   <div>
-                    <Typography.Title level={4}>{activePermissionOtherService.key === "send_notice" ? "配置 · 发送通知" : activePermissionOtherService.name}</Typography.Title>
+                    <Typography.Title level={4}>{activePermissionOtherService.name}</Typography.Title>
                     {activePermissionOtherService.key !== "send_notice" && <Typography.Text className="data-permission-other-hint">勾选允许当前应用调用的接口，已停用的接口无法被调用</Typography.Text>}
                   </div>
                 </div>
@@ -2126,7 +2220,6 @@ function AccessAppsWorkspace() {
                         <div className="data-permission-block-title-stack">
                           <Typography.Title level={5}>允许的通知渠道</Typography.Title>
                         </div>
-                        <Typography.Text className="data-permission-field-count" type="secondary">已选 {permissionNotificationChannels.length} / {notificationChannels.length}</Typography.Text>
                       </div>
                       <div className="data-permission-field-grid">
                         {notificationChannels.map((channel) => (
@@ -2148,7 +2241,15 @@ function AccessAppsWorkspace() {
                         <div className="data-permission-block-title-stack">
                           <Typography.Title level={5}>接口列表</Typography.Title>
                         </div>
-                        <Typography.Text className="data-permission-field-count" type="secondary">已选 {activePermissionOtherInterfaceKeys.length} / {activePermissionOtherInterfaces.length}</Typography.Text>
+                        <div className="data-permission-selection-summary">
+                          <Checkbox
+                            aria-label="全选接口"
+                            checked={allOtherInterfacesSelected}
+                            indeterminate={someOtherInterfacesSelected}
+                            onChange={(event) => toggleAllPermissionOtherInterfaces(event.target.checked)}
+                          />
+                          <Typography.Text className="data-permission-field-count" type="secondary">已选 {activePermissionOtherInterfaceKeys.length} / {activePermissionOtherInterfaces.length}</Typography.Text>
+                        </div>
                       </div>
                       <div className="data-permission-other-interface-list">
                         {activePermissionOtherInterfaces.map((api) => (
@@ -2164,7 +2265,6 @@ function AccessAppsWorkspace() {
                                   {api.methods.map((method) => <Tag className={`data-permission-other-interface-method is-${method.toLowerCase()}`} key={method}>{method}</Tag>)}
                                 </div>
                               </div>
-                              <Typography.Text className="data-permission-other-interface-url">{api.url}</Typography.Text>
                             </div>
                           </div>
                         ))}
@@ -2187,6 +2287,8 @@ function AccessAppsWorkspace() {
                     const isExpanded = isSelected && expandedPermissionApis.includes(api.key);
                     const apiFields = permissionFields[activePermissionTable.key]?.[api.key] || [];
                     const apiConditions = permissionConditions[activePermissionTable.key]?.[api.key] || [];
+                    const allFieldsSelected = activePermissionTable.fields.length > 0 && apiFields.length === activePermissionTable.fields.length;
+                    const someFieldsSelected = apiFields.length > 0 && !allFieldsSelected;
 
                     return (
                       <div className={`data-permission-api-list-item${isSelected ? " is-selected" : ""}`} key={api.key}>
@@ -2235,10 +2337,18 @@ function AccessAppsWorkspace() {
                                     <Typography.Title level={5}>{api.key === "read" ? "可读取字段" : "可写入字段"}</Typography.Title>
                                     <Typography.Text className="data-permission-block-hint" type="secondary">未勾选的字段不会被应用访问；标记为敏感的字段由管理员统一配置脱敏规则</Typography.Text>
                                   </div>
-                                  <Typography.Text className="data-permission-field-count" type="secondary">已选 {apiFields.length} / {activePermissionTable.fields.length}</Typography.Text>
+                                  <div className="data-permission-selection-summary">
+                                    <Checkbox
+                                      aria-label={`全选${api.label}字段`}
+                                      checked={allFieldsSelected}
+                                      indeterminate={someFieldsSelected}
+                                      onChange={(event) => toggleAllPermissionFields(api.key, event.target.checked)}
+                                    />
+                                    <Typography.Text className="data-permission-field-count" type="secondary">已选 {apiFields.length} / {activePermissionTable.fields.length}</Typography.Text>
+                                  </div>
                                 </div>
                                 <div className="data-permission-field-grid">
-                                  {activePermissionTable.fields.map((field) => <Checkbox key={field.key} checked={apiFields.includes(field.key)} onChange={(event) => togglePermissionField(api.key, field.key, event.target.checked)}>{field.label}{field.sensitive && <Tag color="warning">敏感</Tag>}</Checkbox>)}
+                                  {activePermissionTable.fields.map((field) => <Checkbox key={field.key} checked={apiFields.includes(field.key)} onChange={(event) => togglePermissionField(api.key, field.key, event.target.checked)}>{field.label}{field.sensitive && <Tag color="warning">脱敏</Tag>}</Checkbox>)}
                                 </div>
                               </div>
                             )}
@@ -2251,6 +2361,15 @@ function AccessAppsWorkspace() {
               </>
             )}
           </section>
+          {permissionScrollbar.thumbHeight > 0 && (
+            <div className="access-register-floating-scrollbar" aria-hidden="true">
+              <div
+                className="access-register-floating-scrollbar-thumb"
+                style={{ height: permissionScrollbar.thumbHeight, transform: `translateY(${permissionScrollbar.thumbOffset}px)` }}
+                onPointerDown={handlePermissionScrollbarPointerDown}
+              />
+            </div>
+          )}
         </div>
       </Modal>
       <Modal
