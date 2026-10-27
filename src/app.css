@@ -80,6 +80,13 @@ body { color: var(--color-text); background: var(--color-page-bg); font-family: 
 .nav-menu .ant-menu-submenu-arrow { display: none; }
 .nav-menu .ant-menu-sub.ant-menu-inline { background: transparent; }
 .nav-menu-label { display: flex; align-items: center; min-width: 0; width: 100%; gap: 8px; }
+.data-permission-navigation-menu .nav-menu-label { gap: 8px; }
+.data-permission-navigation-menu .nav-menu-arrow { margin-inline-end: -4px; }
+.data-permission-navigation-menu .nav-menu-icon + .nav-menu-text { margin-inline-start: -4px; }
+.data-permission-navigation-menu .nav-menu-kind-table .nav-menu-label { transform: translateX(-4px); }
+.data-permission-navigation-menu .ant-menu-item,
+.data-permission-navigation-menu .ant-menu-submenu-title { overflow: visible; }
+.data-permission-navigation-menu .ant-menu-title-content { overflow: visible !important; }
 .nav-menu-leading { display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center; line-height: 0; }
 .nav-menu-leading .ant-checkbox { margin: 0; }
 .nav-menu-arrow, .nav-menu-arrow-placeholder { display: inline-flex; flex: 0 0 16px; width: 16px; height: 16px; align-items: center; justify-content: center; color: var(--color-text-tertiary); font-size: 12px; line-height: 0; }
@@ -90,6 +97,7 @@ body { color: var(--color-text); background: var(--color-page-bg); font-family: 
 .nav-menu-icon .i-icon > svg { display: block; }
 .nav-menu-text { min-width: 0; flex: 1 1 auto; overflow: hidden; color: var(--color-text-secondary); text-overflow: ellipsis; white-space: nowrap; }
 .nav-menu-actions { display: none; flex: 0 0 auto; gap: 2px; margin-left: auto; }
+.nav-menu-trailing { display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center; line-height: 0; }
 .nav-menu-actions .ant-btn { width: 24px; height: 24px; padding: 0; color: var(--color-text-tertiary); }
 .nav-menu-actions .ant-btn-dangerous { color: var(--color-error); }
 .nav-menu-actions .ant-btn.ant-btn-disabled,
@@ -210,6 +218,7 @@ body { color: var(--color-text); background: var(--color-page-bg); font-family: 
 .association-modal { height: min(600px, calc(100vh - 32px)); max-height: 600px; }
 .association-modal .ant-modal-container { display: flex; height: 100%; max-height: 600px; flex-direction: column; }
 .association-modal .ant-modal-header { margin-bottom: 16px; }
+.association-modal .ant-modal-title { color: var(--color-text); font-size: 16px; line-height: 24px; font-weight: 600; }
 .association-modal .ant-modal-body { display: flex; min-height: 0; flex: 1; flex-direction: column; padding: 0; overflow: hidden; }
 .association-modal .ant-modal-footer { margin-top: 24px; padding-top: 0; }
 .association-modal-content { display: flex; min-height: 0; flex: 1; flex-direction: column; border: 1px solid var(--color-border-subtle); border-radius: 6px; }
@@ -315,7 +324,7 @@ body { color: var(--color-text); background: var(--color-page-bg); font-family: 
 .data-permission-table-item-main { display: flex; min-width: 0; flex: 1; flex-direction: column; gap: 1px; }
 .data-permission-table-item-main > :first-child { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .data-permission-table-item-main .ant-typography:last-child { font-size: 12px; }
-.data-permission-api-count { min-width: 18px; color: var(--color-text-tertiary); font-size: 12px; text-align: center; }
+.data-permission-api-count { min-width: 18px; color: var(--color-text-tertiary); font-size: 12px; line-height: 20px; text-align: center; }
 .data-permission-other-group + .data-permission-other-group { margin-top: 8px; }
 .data-permission-other-group-item { display: flex; width: 259px; height: 40px; align-items: center; gap: 8px; cursor: pointer; }
 .data-permission-other-service-item { display: flex; width: 259px; height: 40px; min-height: 40px; align-items: center; gap: 8px; padding: 6px 8px 6px 32px; border-radius: 6px; cursor: pointer; }
@@ -343,18 +352,34 @@ body { color: var(--color-text); background: var(--color-page-bg); font-family: 
 .data-permission-config-block { padding: 16px; background: var(--color-surface); }
 .data-permission-config-block + .data-permission-config-block { border-top: 1px solid var(--color-border-subtle); }
 .data-permission-block-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.data-permission-condition-config-block.is-empty .data-permission-block-heading { margin-bottom: 0; }
+.data-permission-field-config-block .data-permission-block-heading { align-items: center; }
 .data-permission-block-title-stack { display: flex; min-width: 0; flex-direction: column; gap: 0; }
 .data-permission-modal .data-permission-block-heading h5.ant-typography { margin: 0; font-size: 14px; line-height: 22px; }
 .data-permission-selection-summary { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 8px; margin-inline-start: auto; }
-.data-permission-field-count.ant-typography { font-size: 12px; text-align: right; white-space: nowrap; }
+.data-permission-field-count.ant-typography { color: var(--color-text-secondary); font-size: 14px; text-align: right; white-space: nowrap; }
+.data-permission-field-heading-actions { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 12px; margin-inline-start: auto; }
+.data-permission-field-heading-actions .data-permission-selection-summary { margin-inline-start: 0; }
+.data-permission-toggle-fields.ant-btn-link { position: relative; box-sizing: border-box; width: auto; height: 22px; min-height: 22px; margin-inline-start: 0; padding: 0 0 0 12px !important; border: 0 !important; border-radius: 0; outline: 0 !important; color: var(--color-text-secondary); background: transparent !important; box-shadow: none !important; font-size: 14px; line-height: 22px; text-decoration: none !important; }
+.data-permission-toggle-fields.ant-btn-link::before { position: absolute; inset-inline-start: 0; top: 50%; width: 1px; height: 14px; background: var(--color-border-subtle); content: ""; transform: translateY(-50%); }
+.data-permission-toggle-fields.ant-btn-link:not(:disabled):hover { color: var(--color-text) !important; background: transparent !important; box-shadow: none !important; text-decoration: none !important; }
+.data-permission-toggle-fields.ant-btn-link:not(:disabled):focus,
+.data-permission-toggle-fields.ant-btn-link:not(:disabled):focus-visible,
+.data-permission-toggle-fields.ant-btn-link:not(:disabled):active { border: 0 !important; outline: 0 !important; color: var(--color-text-secondary) !important; background: transparent !important; box-shadow: none !important; text-decoration: none !important; }
 .data-permission-block-hint.ant-typography { display: block; margin: 0; font-size: 12px; line-height: 20px; }
 .data-permission-block-heading > .data-permission-add-condition.ant-btn-link { align-self: flex-start; margin-inline-start: auto; margin-inline-end: 0; padding-inline: 0; color: var(--color-brand); }
 .data-permission-add-condition.ant-btn-link:not(:disabled):not(.ant-btn-disabled):hover { color: var(--color-brand-hover) !important; }
 .data-permission-condition-row { margin-bottom: 8px; }
+.data-permission-condition-row:last-child { margin-bottom: 0; }
 .data-permission-condition-row .ant-select:first-child { width: 180px; }
 .data-permission-condition-row .ant-select:nth-child(2) { width: 120px; }
 .data-permission-condition-row .ant-input { min-width: 0; flex: 1; }
+.data-permission-condition-delete.ant-btn { width: 32px; height: 32px; flex: 0 0 auto; padding: 0; color: var(--color-text-tertiary); }
+.data-permission-condition-delete.ant-btn:hover { color: var(--color-error); background: var(--color-surface-hover); }
 .data-permission-field-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px 16px; }
+.data-permission-base-field-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.data-permission-field-config-block { padding-bottom: 16px; }
+.data-permission-field-config-block.is-collapsed .data-permission-block-heading { margin-bottom: 0; }
 .data-permission-field-grid .ant-checkbox-wrapper { min-width: 0; line-height: 22px; }
 .data-permission-field-grid .ant-tag { margin-inline-start: 6px; margin-inline-end: 0; font-size: 11px; }
 .data-permission-empty-panel { max-width: 720px; }

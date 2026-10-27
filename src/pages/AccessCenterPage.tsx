@@ -1,4 +1,5 @@
 import { Button, Card, Checkbox, DatePicker, Descriptions, Empty, Flex, Form, Input, message, Modal, Pagination, Popconfirm, Radio, Select, Space, Tabs, Table, Tag, Tooltip, Typography } from "antd";
+import zhCN from "antd/locale/zh_CN";
 import { AllApplication, ApiApp, Clear as ClearOutlined, Close as CloseOutlined, DataSheet, DatabaseTime, Delete as DeleteOutlined, Down as DownOutlined, Notes, Plus as PlusOutlined, Permissions, PreviewOpen, Search as SearchOutlined, Time, User, ViewList } from "@icon-park/react";
 import { useLayoutEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -397,7 +398,7 @@ function AssociationTable({ rows, type, appName, selectedKeys, linkedKeys, allSe
           { title: "关联状态", key: "status", width: 160, render: (_value, row) => {
             const linkedElsewhere = Boolean(row.linkedTo && row.linkedTo !== appName);
             const linked = linkedElsewhere || linkedKeys.includes(row.key);
-            const statusLabel = linkedElsewhere ? row.linkedTo : linked ? "已关联" : "未关联";
+            const statusLabel = linked && row.linkedTo ? row.linkedTo : linked ? "已关联" : "未关联";
             return <span className={linked ? "association-status-linked" : "association-status-unlinked"}>{statusLabel}</span>;
           } },
           { title: type === "form" ? "表单id" : "审批id", dataIndex: "id", key: "id", width: 160, render: (value: string) => <Typography.Text className="association-item-id">{value}</Typography.Text> },
@@ -433,6 +434,14 @@ const defaultPermissionFields: PermissionField[] = [
   { key: "department", label: "所属部门" },
   { key: "contact", label: "联系人", sensitive: true },
   { key: "status", label: "状态" },
+  { key: "createdBy", label: "创建人" },
+  { key: "createdAt", label: "创建时间" },
+  { key: "updatedBy", label: "更新人" },
+  { key: "updatedAt", label: "更新时间" },
+  { key: "remark", label: "备注" },
+  { key: "source", label: "数据来源" },
+  { key: "type", label: "类型" },
+  { key: "sort", label: "排序" },
 ];
 
 const permissionTables: PermissionTable[] = getBaseDataNavigationTableNodes().map((node, index) => ({
@@ -1058,6 +1067,7 @@ function AuditLogWorkspace({ logType }: { logType: AuditLogKey }) {
             <span>操作时间</span>
             <DatePicker.RangePicker
               allowClear
+              locale={zhCN.DatePicker}
               placeholder={["开始日期", "结束日期"]}
               suffixIcon={<FixedCalendar size={16} strokeWidth={3} />}
               onChange={(_dates, dateStrings) => setFilters((current) => ({ ...current, dateRange: dateStrings.filter(Boolean) as string[] }))}
@@ -1179,6 +1189,7 @@ function AccessAppsWorkspace() {
   const [permissionApiStates, setPermissionApiStates] = useState<Record<string, PermissionApiState>>({});
   const [expandedPermissionApis, setExpandedPermissionApis] = useState<PermissionApiKey[]>([]);
   const [permissionFields, setPermissionFields] = useState<Record<string, Record<PermissionApiKey, string[]>>>({});
+  const [permissionFieldOptionsCollapsed, setPermissionFieldOptionsCollapsed] = useState<Record<string, boolean>>({});
   const [permissionConditions, setPermissionConditions] = useState<Record<string, Record<PermissionApiKey, PermissionCondition[]>>>({});
   const [permissionOtherSelected, setPermissionOtherSelected] = useState<string[]>(["send_notice"]);
   const [permissionActiveOtherService, setPermissionActiveOtherService] = useState("send_notice");
@@ -1193,13 +1204,15 @@ function AccessAppsWorkspace() {
   const pagedRows = filteredRows.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   const associationAppName = associationApp?.app || "";
-  const staticAssociationKeys = Object.values(associationRows).flat().filter((row) => row.linkedTo === associationAppName).map((row) => row.key);
-  const storedAssociationKeys = (associationApp && associationLinks[String(associationApp.key)]) || [];
-  const linkedAssociationKeys = Array.from(new Set([...staticAssociationKeys, ...storedAssociationKeys]));
+  const defaultAssociationKeys = Object.values(associationRows).flat().filter((row) => row.linkedTo === associationAppName).map((row) => row.key);
+  const persistedAssociationKeys = associationApp
+    ? (associationLinks[String(associationApp.key)] ?? defaultAssociationKeys)
+    : [];
+  const linkedAssociationKeys = associationSelectedKeys;
   const associationSourceRows = associationRows[associationType];
   const filteredAssociationRows = associationSourceRows
     .filter((row) => {
-      const isLinked = Boolean((row.linkedTo && row.linkedTo !== associationAppName) || linkedAssociationKeys.includes(row.key));
+      const isLinked = Boolean((row.linkedTo && row.linkedTo !== associationAppName) || persistedAssociationKeys.includes(row.key));
       if (associationFilter === "linked" && !isLinked) return false;
       if (associationFilter === "unlinked" && isLinked) return false;
       return `${row.name}${row.id}${row.owner}`.includes(associationKeyword.trim());
@@ -1235,6 +1248,7 @@ function AccessAppsWorkspace() {
     setPermissionSelectedTables([defaultPermissionTableKey]);
     setPermissionApiStates(Object.fromEntries(permissionTables.map((table) => [table.key, defaultPermissionApiState()])));
     setPermissionFields({});
+    setPermissionFieldOptionsCollapsed({});
     setPermissionConditions({});
     setExpandedPermissionApis([]);
     setPermissionOtherSelected(["send_notice"]);
@@ -1357,10 +1371,24 @@ function AccessAppsWorkspace() {
     });
   };
 
+  const removePermissionCondition = (apiKey: PermissionApiKey, index: number) => {
+    setPermissionConditions((current) => {
+      const tableConditions = current[activePermissionTable.key] || { create: [], delete: [], update: [], read: [] };
+      return {
+        ...current,
+        [activePermissionTable.key]: {
+          ...tableConditions,
+          [apiKey]: tableConditions[apiKey].filter((_condition, conditionIndex) => conditionIndex !== index),
+        },
+      };
+    });
+  };
+
   const openAssociationModal = (row: RegisteredAppRow) => {
     const storedKeys = associationLinks[String(row.key)];
+    const defaultLinkedKeys = Object.values(associationRows).flat().filter((item) => item.linkedTo === row.app).map((item) => item.key);
     setAssociationApp({ key: row.key, app: row.app });
-    setAssociationSelectedKeys(storedKeys || []);
+    setAssociationSelectedKeys(storedKeys === undefined ? defaultLinkedKeys : storedKeys);
     setAssociationType("form");
     setAssociationFilter("all");
     setAssociationKeyword("");
@@ -2102,7 +2130,7 @@ function AccessAppsWorkspace() {
         onCancel={() => setPermissionOpen(false)}
         footer={(
           <div className="data-permission-footer">
-            <Typography.Text type="secondary">已选 {permissionSelectedCount} 张基础表，接口权限 {permissionApiCount} 项，功能权限 {permissionOtherSelected.length} 项</Typography.Text>
+            <Typography.Text type="secondary">已选 {permissionSelectedCount} 张基础表，操作数据权限 {permissionApiCount} 项，其他服务权限 {permissionOtherSelected.length} 项</Typography.Text>
             <Space>
               <Button style={{ width: 88 }} onClick={() => setPermissionOpen(false)}>取消</Button>
               <Button type="primary" style={{ width: 88 }} onClick={() => setPermissionOpen(false)}>保存授权</Button>
@@ -2150,6 +2178,15 @@ function AccessAppsWorkspace() {
                           indeterminate={selectedCount > 0 && selectedCount < tableKeys.length}
                           onChange={(event) => togglePermissionNavigationNode(node, event.target.checked)}
                         />
+                      );
+                    }}
+                    renderTrailing={(node) => {
+                      if (node.kind !== "table") return null;
+                      const selectedApiLabels = permissionApis.filter((api) => permissionApiStates[node.key]?.[api.key]).map((api) => api.label);
+                      return (
+                        <Tooltip title={selectedApiLabels.length > 0 ? selectedApiLabels.join("、") : "暂无已勾选权限"}>
+                          <span className="data-permission-api-count">{selectedApiLabels.length}</span>
+                        </Tooltip>
                       );
                     }}
                     selectParent={false}
@@ -2287,6 +2324,8 @@ function AccessAppsWorkspace() {
                     const isExpanded = isSelected && expandedPermissionApis.includes(api.key);
                     const apiFields = permissionFields[activePermissionTable.key]?.[api.key] || [];
                     const apiConditions = permissionConditions[activePermissionTable.key]?.[api.key] || [];
+                    const fieldOptionsKey = `${activePermissionTable.key}:${api.key}`;
+                    const areFieldOptionsCollapsed = Boolean(permissionFieldOptionsCollapsed[fieldOptionsKey]);
                     const allFieldsSelected = activePermissionTable.fields.length > 0 && apiFields.length === activePermissionTable.fields.length;
                     const someFieldsSelected = apiFields.length > 0 && !allFieldsSelected;
 
@@ -2313,7 +2352,7 @@ function AccessAppsWorkspace() {
                         {isExpanded && (
                           <div className="data-permission-api-list-content">
                             {api.key !== "create" && (
-                                <div className="data-permission-config-block">
+                                <div className={`data-permission-config-block data-permission-condition-config-block${apiConditions.length === 0 ? " is-empty" : ""}`}>
                                 <div className="data-permission-block-heading">
                                   <div className="data-permission-block-title-stack">
                                     <Typography.Title level={5}>数据过滤条件</Typography.Title>
@@ -2326,30 +2365,49 @@ function AccessAppsWorkspace() {
                                     <Select suffixIcon={<DownOutlined size={16} />} value={condition.field} options={activePermissionTable.fields.map((field) => ({ value: field.key, label: field.label }))} onChange={(value) => updatePermissionCondition(api.key, index, { field: value })} />
                                     <Select suffixIcon={<DownOutlined size={16} />} value={condition.operator} options={[{ value: "eq", label: "等于" }, { value: "ne", label: "不等于" }, { value: "in", label: "包含" }, { value: "gt", label: "大于" }, { value: "lt", label: "小于" }]} onChange={(value) => updatePermissionCondition(api.key, index, { operator: value })} />
                                     <Input value={condition.value} placeholder="请输入条件值" onChange={(event) => updatePermissionCondition(api.key, index, { value: event.target.value })} />
+                                    <Tooltip title="删除条件">
+                                      <Button
+                                        type="text"
+                                        aria-label="删除条件"
+                                        className="data-permission-condition-delete"
+                                        icon={<DeleteOutlined size={16} />}
+                                        onClick={() => removePermissionCondition(api.key, index)}
+                                      />
+                                    </Tooltip>
                                   </Flex>
                                 ))}
                               </div>
                             )}
                             {api.key !== "delete" && (
-                              <div className="data-permission-config-block">
+                              <div className={`data-permission-config-block data-permission-field-config-block${areFieldOptionsCollapsed ? " is-collapsed" : ""}`}>
                                 <div className="data-permission-block-heading">
                                   <div className="data-permission-block-title-stack">
-                                    <Typography.Title level={5}>{api.key === "read" ? "可读取字段" : "可写入字段"}</Typography.Title>
-                                    <Typography.Text className="data-permission-block-hint" type="secondary">未勾选的字段不会被应用访问；标记为敏感的字段由管理员统一配置脱敏规则</Typography.Text>
+                                    <Typography.Title level={5}>{api.key === "read" ? "可见字段" : "可编辑字段"}</Typography.Title>
                                   </div>
-                                  <div className="data-permission-selection-summary">
-                                    <Checkbox
-                                      aria-label={`全选${api.label}字段`}
-                                      checked={allFieldsSelected}
-                                      indeterminate={someFieldsSelected}
-                                      onChange={(event) => toggleAllPermissionFields(api.key, event.target.checked)}
-                                    />
-                                    <Typography.Text className="data-permission-field-count" type="secondary">已选 {apiFields.length} / {activePermissionTable.fields.length}</Typography.Text>
+                                  <div className="data-permission-field-heading-actions">
+                                    <div className="data-permission-selection-summary">
+                                      <Checkbox
+                                        aria-label={`全选${api.label}字段`}
+                                        checked={allFieldsSelected}
+                                        indeterminate={someFieldsSelected}
+                                        onChange={(event) => toggleAllPermissionFields(api.key, event.target.checked)}
+                                      />
+                                      <Typography.Text className="data-permission-field-count" type="secondary">已选 {apiFields.length} / {activePermissionTable.fields.length}</Typography.Text>
+                                    </div>
+                                    <Button
+                                      type="link"
+                                      className="data-permission-toggle-fields"
+                                      onClick={() => setPermissionFieldOptionsCollapsed((current) => ({ ...current, [fieldOptionsKey]: !areFieldOptionsCollapsed }))}
+                                    >
+                                      {areFieldOptionsCollapsed ? "展开字段" : "收起字段"}
+                                    </Button>
                                   </div>
                                 </div>
-                                <div className="data-permission-field-grid">
-                                  {activePermissionTable.fields.map((field) => <Checkbox key={field.key} checked={apiFields.includes(field.key)} onChange={(event) => togglePermissionField(api.key, field.key, event.target.checked)}>{field.label}{field.sensitive && <Tag color="warning">脱敏</Tag>}</Checkbox>)}
-                                </div>
+                                {!areFieldOptionsCollapsed && (
+                                  <div className="data-permission-field-grid data-permission-base-field-grid">
+                                    {activePermissionTable.fields.map((field) => <Checkbox key={field.key} checked={apiFields.includes(field.key)} onChange={(event) => togglePermissionField(api.key, field.key, event.target.checked)}>{field.label}</Checkbox>)}
+                                  </div>
+                                )}
                               </div>
                             )}
                           </div>
@@ -2377,7 +2435,12 @@ function AccessAppsWorkspace() {
         width={800}
         centered
         className="association-modal"
-        title="关联业务表"
+        title={(
+          <div className="interface-detail-title-stack">
+            <span>关联业务表</span>
+            <Typography.Text className="modal-title-hint interface-detail-title-hint" type="secondary">应用：{associationAppName}</Typography.Text>
+          </div>
+        )}
         closeIcon={<CloseOutlined size={20} />}
         onCancel={() => setAssociationOpen(false)}
         footer={(

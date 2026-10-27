@@ -21,6 +21,7 @@ type BaseDataNavigationMenuProps = {
   onEdit?: (node: BaseDataNavigationMenuNode) => void;
   onDelete?: (node: BaseDataNavigationMenuNode) => void;
   renderLeading?: (node: BaseDataNavigationMenuNode) => ReactNode;
+  renderTrailing?: (node: BaseDataNavigationMenuNode) => ReactNode;
   className?: string;
   showActions?: boolean;
   selectParent?: boolean;
@@ -39,6 +40,7 @@ export function BaseDataNavigationMenu({
   onEdit,
   onDelete,
   renderLeading,
+  renderTrailing,
   className = "",
   showActions = true,
   selectParent = true,
@@ -99,7 +101,7 @@ export function BaseDataNavigationMenu({
   const totalTableNodes = countTableNodes(nodes);
   const toItems = (items: BaseDataNavigationMenuNode[], depth = 0): NonNullable<React.ComponentProps<typeof Menu>["items"]> => items.map((node) => ({
     key: node.key,
-    className: `nav-menu-depth-${depth}${selectedKey === node.key ? " nav-menu-node-selected" : ""}`,
+    className: `nav-menu-depth-${depth} nav-menu-kind-${node.kind}${selectedKey === node.key ? " nav-menu-node-selected" : ""}`,
     onTitleClick: node.children && selectParent ? () => onSelect(node.key) : undefined,
     label: (
       <span className={`nav-menu-label${selectedKey === node.key ? " nav-menu-label-selected" : ""}`}>
@@ -107,6 +109,7 @@ export function BaseDataNavigationMenu({
         {renderLeading && <span className="nav-menu-leading" onMouseDown={(event) => event.stopPropagation()} onClick={(event) => event.stopPropagation()}>{renderLeading(node)}</span>}
         {!node.children && <span className="nav-menu-icon">{node.icon}</span>}
         <OverflowTooltip title={node.title} className="nav-menu-text">{node.title}</OverflowTooltip>
+        {renderTrailing && <span className="nav-menu-trailing" onMouseDown={(event) => event.stopPropagation()} onClick={(event) => event.stopPropagation()}>{renderTrailing(node)}</span>}
         {showActions && onEdit && onDelete && (
           <span className="nav-menu-actions" onMouseDown={(event) => event.stopPropagation()} onClick={(event) => event.stopPropagation()}>
             <Button type="text" size="small" icon={<EditOutlined />} title="编辑导航名称" aria-label={`编辑${node.title}`} onClick={() => onEdit(node)} />

@@ -1,11 +1,15 @@
 import React, { type ReactNode } from "react";
 import ReactDOM from "react-dom/client";
+import dayjs from "dayjs";
+import "dayjs/locale/zh-cn";
 import { HashRouter, Routes, Route } from "react-router-dom";
 import { ConfigProvider } from "antd";
 import zhCN from "antd/locale/zh_CN";
 import { antdTheme } from "../theme/antd-theme";
 import "../theme/tokens.css";
 import "../app.css";
+
+dayjs.locale("zh-cn");
 
 export function renderStandalone(page: ReactNode) {
   ReactDOM.createRoot(document.getElementById("root")!).render(
