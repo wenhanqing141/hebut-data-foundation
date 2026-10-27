@@ -324,7 +324,7 @@ body { color: var(--color-text); background: var(--color-page-bg); font-family: 
 .data-permission-table-item-main { display: flex; min-width: 0; flex: 1; flex-direction: column; gap: 1px; }
 .data-permission-table-item-main > :first-child { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .data-permission-table-item-main .ant-typography:last-child { font-size: 12px; }
-.data-permission-api-count { min-width: 18px; color: var(--color-text-tertiary); font-size: 12px; line-height: 20px; text-align: center; }
+.data-permission-api-count { color: var(--color-text-tertiary); font-size: 12px; line-height: 20px; text-align: center; }
 .data-permission-other-group + .data-permission-other-group { margin-top: 8px; }
 .data-permission-other-group-item { display: flex; width: 259px; height: 40px; align-items: center; gap: 8px; cursor: pointer; }
 .data-permission-other-service-item { display: flex; width: 259px; height: 40px; min-height: 40px; align-items: center; gap: 8px; padding: 6px 8px 6px 32px; border-radius: 6px; cursor: pointer; }
