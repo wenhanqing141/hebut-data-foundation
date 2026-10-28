@@ -8,6 +8,7 @@ const { Header, Sider, Content } = Layout;
 
 type AppShellProps = {
   title: string;
+  activeTopKey?: string;
   breadcrumb?: string[];
   siderWidth?: number;
   sideItems?: MenuProps["items"];
@@ -21,6 +22,7 @@ type AppShellProps = {
 
 export function AppShell({
   title,
+  activeTopKey,
   breadcrumb = [],
   siderWidth = 232,
   sideItems,
@@ -33,7 +35,7 @@ export function AppShell({
 }: AppShellProps) {
   const navigate = useNavigate();
   const location = useLocation();
-  const topKey = location.pathname.startsWith("/access") ? "access" : location.pathname.startsWith("/base/frontend") ? "base-frontend" : "base-admin";
+  const topKey = activeTopKey || (location.pathname.startsWith("/access") ? "access" : location.pathname.startsWith("/base/frontend") ? "base-frontend" : location.pathname.startsWith("/permission-denied") ? "permission-denied" : "base-admin");
   const goTo = (path: string) => {
     if (window.location.protocol !== "file:") {
       navigate(path);
@@ -43,6 +45,8 @@ export function AppShell({
       window.location.href = `接入中心.html${path === "/access/apps" ? "" : `#${path}`}`;
     } else if (path === "/base/frontend") {
       window.location.href = "基础数据中心前台.html";
+    } else if (path === "/permission-denied") {
+      window.location.href = "页面无权限.html";
     } else {
       window.location.href = "基础数据中心后台.html";
     }
@@ -62,8 +66,9 @@ export function AppShell({
             { key: "base-admin", label: "基础数据中心后台" },
             { key: "base-frontend", label: "基础数据中心前台" },
             { key: "access", label: "接入中心" },
+            { key: "permission-denied", label: "页面无权限" },
           ]}
-          onClick={({ key }) => goTo(key === "access" ? "/access/apps" : key === "base-frontend" ? "/base/frontend" : "/base/admin")}
+          onClick={({ key }) => goTo(key === "access" ? "/access/apps" : key === "base-frontend" ? "/base/frontend" : key === "permission-denied" ? "/permission-denied" : "/base/admin")}
         />
       </Header>
       <Layout>
