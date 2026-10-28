@@ -1,6 +1,6 @@
 import { Button, Card, Checkbox, DatePicker, Descriptions, Empty, Flex, Form, Input, message, Modal, Pagination, Popconfirm, Radio, Select, Space, Tabs, Table, Tag, Tooltip, Typography } from "antd";
 import zhCN from "antd/locale/zh_CN";
-import { AllApplication, ApiApp, Clear as ClearOutlined, Close as CloseOutlined, DataSheet, DatabaseTime, Delete as DeleteOutlined, Down as DownOutlined, Notes, Plus as PlusOutlined, Permissions, PreviewOpen, Search as SearchOutlined, Time, User, ViewList } from "@icon-park/react";
+import { AllApplication, ApiApp, Clear as ClearOutlined, Close as CloseOutlined, DataSheet, DatabaseTime, Delete as DeleteOutlined, Down as DownOutlined, Notes, Plus as PlusOutlined, Permissions, PreviewOpen, Search as SearchOutlined, Time, User } from "@icon-park/react";
 import { useLayoutEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { OverflowTooltip } from "../components/OverflowTooltip";
@@ -1105,7 +1105,6 @@ function AuditLogWorkspace({ logType }: { logType: AuditLogKey }) {
             <div className="audit-detail-summary-item"><span className="audit-detail-summary-label"><User size={16} aria-hidden="true" />操作人：</span><span className="audit-detail-summary-value">{detailRecord.user}</span></div>
             <div className="audit-detail-summary-item"><span className="audit-detail-summary-label"><AllApplication size={16} aria-hidden="true" />操作类型：</span><span className="audit-detail-summary-value">{detailRecord.action}</span></div>
             <div className="audit-detail-summary-item"><span className="audit-detail-summary-label"><Notes size={16} aria-hidden="true" />目标表：</span><span className="audit-detail-summary-value">{detailRecord.target}</span></div>
-            <div className="audit-detail-summary-item is-detail"><span className="audit-detail-summary-label"><ViewList size={16} aria-hidden="true" />操作详情：</span><span className="audit-detail-summary-value">{detailRecord.detail}</span></div>
           </div>
           {detailRecord.records.length ? <>
             <div className="audit-detail-heading"><Typography.Text strong>涉及的数据记录</Typography.Text><span className="authorization-detail-heading-divider" aria-hidden="true" /><Typography.Text type="secondary">共 {detailRecord.records.length} 条</Typography.Text></div>
