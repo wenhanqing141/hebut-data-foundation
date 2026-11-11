@@ -19,6 +19,7 @@ for (const item of entries) {
   const entrySlug = item.name.replace(/\.html$/, "");
   const result = await build({
     absWorkingDir: root,
+    tsconfig: path.join(root, "tsconfig.app.json"),
     entryPoints: [item.entry],
     bundle: true,
     format: "iife",

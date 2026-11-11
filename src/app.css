@@ -342,6 +342,8 @@ body { color: var(--color-text); background: var(--color-page-bg); font-family: 
 .data-permission-main-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 16px; }
 .data-permission-main-heading .ant-typography { margin: 0; }
 .data-permission-main-heading .ant-typography + .ant-typography { display: block; margin-top: 4px; }
+.data-permission-table-title-row { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; }
+.data-permission-disabled-tag.ant-tag { flex: 0 0 auto; margin: 0; border: 0; color: var(--color-error); background: var(--color-error-bg); font-size: 12px; line-height: 22px; }
 .data-permission-api-list { overflow: hidden; border: 1px solid var(--color-border-subtle); border-radius: 6px; background: var(--color-surface); }
 .data-permission-api-list-item + .data-permission-api-list-item { border-top: 1px solid var(--color-border-subtle); }
 .data-permission-api-list-row { display: flex; height: 48px; align-items: center; gap: 8px; padding-inline: 16px; cursor: pointer; }
@@ -378,7 +380,9 @@ body { color: var(--color-text); background: var(--color-page-bg); font-family: 
 .data-permission-condition-row .ant-select:nth-child(2) { width: 120px; }
 .data-permission-condition-row .ant-input { min-width: 0; flex: 1; }
 .data-permission-condition-delete.ant-btn { width: 32px; height: 32px; flex: 0 0 auto; padding: 0; color: var(--color-text-tertiary); }
-.data-permission-condition-delete.ant-btn:hover { color: var(--color-error); background: var(--color-surface-hover); }
+.data-permission-condition-delete.ant-btn:not(:disabled):hover { color: var(--color-error); background: var(--color-surface-hover); }
+.data-permission-block-heading > .data-permission-add-condition.ant-btn-link:disabled,
+.data-permission-condition-delete.ant-btn:disabled { color: var(--color-text-disabled); background: transparent; }
 .data-permission-field-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px 16px; }
 .data-permission-base-field-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .data-permission-field-config-block { padding-bottom: 16px; }
@@ -398,6 +402,7 @@ body { color: var(--color-text); background: var(--color-page-bg); font-family: 
 .data-permission-other-interface-main { min-width: 0; flex: 1; }
 .data-permission-other-interface-title-row { display: flex; min-width: 0; align-items: center; justify-content: space-between; gap: 8px; }
 .data-permission-other-interface-title-row .ant-typography { font-size: 14px; line-height: 22px; }
+.data-permission-other-interface-name { display: flex; min-width: 0; align-items: center; gap: 8px; }
 .data-permission-other-interface-methods { display: flex; flex: 0 0 auto; align-items: center; justify-content: flex-end; gap: 4px; }
 .data-permission-other-interface-method.ant-tag { margin: 0; padding-inline: 6px; border: 1px solid; border-radius: 4px; font-size: 12px; font-weight: 600; line-height: 20px; }
 .data-permission-other-interface-method.is-get { color: #1d4bb7; border-color: #c7d9ff; background: #e5eeff; }

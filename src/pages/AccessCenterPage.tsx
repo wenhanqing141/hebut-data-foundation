@@ -264,8 +264,8 @@ type InterfaceRecord = {
 
 const interfaceSeedRows: Record<string, InterfaceRecord[]> = {
   教务系统: [
-    { key: "api-0001", code: "API-0001", name: "成绩查询", methods: ["GET"], url: "https://jw.example.edu/api/score/query", status: "启用" },
-    { key: "api-0002", code: "API-0002", name: "课程列表", methods: ["GET", "POST"], url: "https://jw.example.edu/api/course/list", status: "启用" },
+    { key: "api-0001", code: "API-0001", name: "成绩查询", methods: ["GET"], url: "https://jw.example.edu/api/score/query", status: "停用" },
+    { key: "api-0002", code: "API-0002", name: "课程列表", methods: ["GET", "POST"], url: "https://jw.example.edu/api/course/list", status: "停用" },
     { key: "api-0003", code: "API-0003", name: "学生信息查询", methods: ["GET"], url: "https://jw.example.edu/api/student/profile", status: "启用" },
     { key: "api-0004", code: "API-0004", name: "学生选课", methods: ["POST"], url: "https://jw.example.edu/api/course/enrollment", status: "启用" },
     { key: "api-0005", code: "API-0005", name: "课表查询", methods: ["GET"], url: "https://jw.example.edu/api/schedule/list", status: "启用" },
@@ -276,6 +276,12 @@ const interfaceSeedRows: Record<string, InterfaceRecord[]> = {
     { key: "api-0010", code: "API-0010", name: "成绩导出", methods: ["POST"], url: "https://jw.example.edu/api/score/export", status: "启用" },
     { key: "api-0011", code: "API-0011", name: "学籍异动记录", methods: ["GET"], url: "https://jw.example.edu/api/student/status-changes", status: "启用" },
     { key: "api-0012", code: "API-0012", name: "教学计划查询", methods: ["GET"], url: "https://jw.example.edu/api/teaching-plan/list", status: "停用" },
+  ],
+  图书馆: [
+    { key: "library-api-0001", code: "API-0001", name: "图书检索", methods: ["GET"], url: "https://library.example.edu/api/books/search", status: "停用" },
+    { key: "library-api-0002", code: "API-0002", name: "借阅记录查询", methods: ["GET"], url: "https://library.example.edu/api/loans/query", status: "启用" },
+    { key: "library-api-0003", code: "API-0003", name: "图书预约", methods: ["POST"], url: "https://library.example.edu/api/books/reserve", status: "启用" },
+    { key: "library-api-0004", code: "API-0004", name: "图书续借", methods: ["POST"], url: "https://library.example.edu/api/loans/renew", status: "启用" },
   ],
 };
 
@@ -417,7 +423,7 @@ function AssociationTable({ rows, type, appName, selectedKeys, linkedKeys, allSe
 type PermissionApiKey = "create" | "delete" | "update" | "read";
 type PermissionCondition = { field: string; operator: string; value: string };
 type PermissionField = { key: string; label: string; sensitive?: boolean };
-type PermissionTable = { key: string; name: string; rows: string; fields: PermissionField[] };
+type PermissionTable = { key: string; name: string; rows: string; fields: PermissionField[]; status: "启用" | "停用" };
 type PermissionApiState = Record<PermissionApiKey, boolean>;
 
 const permissionApis: Array<{ key: PermissionApiKey; label: string }> = [
@@ -444,14 +450,17 @@ const defaultPermissionFields: PermissionField[] = [
   { key: "sort", label: "排序" },
 ];
 
+const disabledPermissionTableKey = "level-2-1-1-1";
+
 const permissionTables: PermissionTable[] = getBaseDataNavigationTableNodes().map((node, index) => ({
   key: node.key,
   name: node.title,
   rows: String(386 + index * 127),
   fields: defaultPermissionFields,
+  status: node.key === disabledPermissionTableKey ? "停用" : "启用",
 }));
 
-const defaultPermissionTableKey = permissionTables[0].key;
+const defaultPermissionTableKey = disabledPermissionTableKey;
 
 function filterPermissionNavigation(nodes: typeof baseDataNavigation, keyword: string): typeof baseDataNavigation {
   const normalizedKeyword = keyword.trim();
@@ -487,6 +496,8 @@ type PermissionOtherInterface = {
   key: string;
   name: string;
   methods: string[];
+  sourceKey?: string;
+  status?: InterfaceStatus;
 };
 
 type PermissionOtherService = {
@@ -499,11 +510,24 @@ type PermissionOtherService = {
 
 const permissionOtherServices: PermissionOtherService[] = [
   { key: "send_notice", name: "通知", description: "允许应用调用通知能力", group: "公共服务" },
-  { key: "academic_api", name: "教务系统", description: "允许应用调用教务系统接口", group: "其他应用", interfaces: [{ key: "score-query", name: "成绩查询", methods: ["GET"] }, { key: "course-list", name: "课程列表", methods: ["GET", "POST"] }] },
-  { key: "library_api", name: "图书馆", description: "允许应用调用图书馆接口", group: "其他应用", interfaces: [{ key: "book-search", name: "图书检索", methods: ["GET"] }] },
+  { key: "academic_api", name: "教务系统", description: "允许应用调用教务系统接口", group: "其他应用", interfaces: [{ key: "score-query", sourceKey: "api-0001", name: "成绩查询", methods: ["GET"] }, { key: "course-list", sourceKey: "api-0002", name: "课程列表", methods: ["GET", "POST"] }] },
+  {
+    key: "library_api", name: "图书馆", description: "允许应用调用图书馆接口", group: "其他应用",
+    interfaces: [
+      { key: "book-search", sourceKey: "library-api-0001", name: "图书检索", methods: ["GET"] },
+      { key: "loan-query", sourceKey: "library-api-0002", name: "借阅记录查询", methods: ["GET"] },
+      { key: "book-reservation", sourceKey: "library-api-0003", name: "图书预约", methods: ["POST"] },
+      { key: "book-renewal", sourceKey: "library-api-0004", name: "图书续借", methods: ["POST"] },
+    ],
+  },
   { key: "campus_card_api", name: "校园卡", description: "允许应用调用校园卡接口", group: "其他应用", interfaces: [{ key: "balance-query", name: "余额查询", methods: ["GET"] }] },
   { key: "finance_api", name: "财务缴费", description: "允许应用调用财务缴费接口", group: "其他应用", interfaces: [{ key: "payment-query", name: "缴费查询", methods: ["GET"] }] },
 ];
+
+const initialPermissionOtherInterfaceSelections: Record<string, string[]> = {
+  academic_api: ["score-query", "course-list"],
+  library_api: ["book-search"],
+};
 
 const notificationChannels = [
   { key: "send_notification", label: "发通知" },
@@ -1153,7 +1177,10 @@ function AccessAppsWorkspace() {
   const [appDeleteTarget, setAppDeleteTarget] = useState<RegisteredAppRow | null>(null);
   const [interfaceDetailOpen, setInterfaceDetailOpen] = useState(false);
   const [interfaceDetailApp, setInterfaceDetailApp] = useState<RegisteredAppRow | null>(null);
-  const [interfaceRows, setInterfaceRows] = useState<InterfaceRecord[]>([]);
+  const [interfaceRowsByApp, setInterfaceRowsByApp] = useState<Record<string, InterfaceRecord[]>>({});
+  const interfaceRows = interfaceDetailApp
+    ? interfaceRowsByApp[interfaceDetailApp.app] ?? interfaceSeedRows[interfaceDetailApp.app] ?? fallbackInterfaceRows(interfaceDetailApp.app)
+    : [];
   const interfaceTableScrollRef = useRef<HTMLDivElement>(null);
   const interfaceTableBodyRef = useRef<HTMLElement | null>(null);
   const [interfaceTableHeaderHeight, setInterfaceTableHeaderHeight] = useState(48);
@@ -1190,11 +1217,11 @@ function AccessAppsWorkspace() {
   const [permissionFields, setPermissionFields] = useState<Record<string, Record<PermissionApiKey, string[]>>>({});
   const [permissionFieldOptionsCollapsed, setPermissionFieldOptionsCollapsed] = useState<Record<string, boolean>>({});
   const [permissionConditions, setPermissionConditions] = useState<Record<string, Record<PermissionApiKey, PermissionCondition[]>>>({});
-  const [permissionOtherSelected, setPermissionOtherSelected] = useState<string[]>(["send_notice"]);
+  const [permissionOtherSelected, setPermissionOtherSelected] = useState<string[]>(["send_notice", "academic_api", "library_api"]);
   const [permissionActiveOtherService, setPermissionActiveOtherService] = useState("send_notice");
   const [collapsedPermissionOtherGroups, setCollapsedPermissionOtherGroups] = useState<string[]>([]);
   const [permissionNotificationChannels, setPermissionNotificationChannels] = useState<string[]>(["send_notification"]);
-  const [permissionOtherInterfaceSelections, setPermissionOtherInterfaceSelections] = useState<Record<string, string[]>>({});
+  const [permissionOtherInterfaceSelections, setPermissionOtherInterfaceSelections] = useState(initialPermissionOtherInterfaceSelections);
   const filteredRows = registeredAppRows.filter((row) => (
     (!appliedFilters.app || row.app.includes(appliedFilters.app))
     && (!appliedFilters.appid || row.appid.includes(appliedFilters.appid))
@@ -1226,14 +1253,29 @@ function AccessAppsWorkspace() {
 
   const defaultPermissionApiState = (): PermissionApiState => ({ create: false, delete: false, update: false, read: false });
   const activePermissionTable = permissionTables.find((table) => table.key === permissionActiveTable) || permissionTables[0];
+  const isPermissionTableDisabled = activePermissionTable.status === "停用";
   const activePermissionApiState = permissionApiStates[activePermissionTable.key] || defaultPermissionApiState();
   const filteredPermissionNavigation = filterPermissionNavigation(baseDataNavigation, permissionKeyword);
-  const filteredPermissionOtherServices = permissionOtherServices.filter((service) => `${service.name}${service.description}`.includes(permissionKeyword.trim()));
+  const resolvedPermissionOtherServices: PermissionOtherService[] = permissionOtherServices.map((service) => ({
+    ...service,
+    interfaces: service.interfaces?.map((api) => {
+      const source = (interfaceRowsByApp[service.name] ?? interfaceSeedRows[service.name])?.find((item) => item.key === api.sourceKey);
+      return {
+        ...api,
+        name: source?.name ?? api.name,
+        methods: source?.methods ?? api.methods,
+        status: api.sourceKey ? source?.status ?? "停用" : "启用",
+      };
+    }),
+  }));
+  const filteredPermissionOtherServices = resolvedPermissionOtherServices.filter((service) => `${service.name}${service.description}`.includes(permissionKeyword.trim()));
   const permissionOtherGroups = Array.from(new Set(filteredPermissionOtherServices.map((service) => service.group)));
-  const activePermissionOtherService = permissionOtherServices.find((service) => service.key === permissionActiveOtherService) || permissionOtherServices[0];
+  const activePermissionOtherService = resolvedPermissionOtherServices.find((service) => service.key === permissionActiveOtherService) || resolvedPermissionOtherServices[0];
   const activePermissionOtherInterfaces = activePermissionOtherService.interfaces || [];
-  const activePermissionOtherInterfaceKeys = permissionOtherInterfaceSelections[activePermissionOtherService.key] || [];
-  const allOtherInterfacesSelected = activePermissionOtherInterfaces.length > 0 && activePermissionOtherInterfaceKeys.length === activePermissionOtherInterfaces.length;
+  const selectablePermissionOtherInterfaceKeys = activePermissionOtherInterfaces.filter((api) => api.status !== "停用").map((api) => api.key);
+  const isPermissionOtherServiceDisabled = activePermissionOtherInterfaces.length > 0 && selectablePermissionOtherInterfaceKeys.length === 0;
+  const activePermissionOtherInterfaceKeys = permissionOtherInterfaceSelections[activePermissionOtherService.key] ?? initialPermissionOtherInterfaceSelections[activePermissionOtherService.key] ?? [];
+  const allOtherInterfacesSelected = activePermissionOtherInterfaces.length > 0 && activePermissionOtherInterfaces.every((api) => activePermissionOtherInterfaceKeys.includes(api.key));
   const someOtherInterfacesSelected = activePermissionOtherInterfaceKeys.length > 0 && !allOtherInterfacesSelected;
   const permissionSelectedCount = permissionSelectedTables.length;
   const permissionApiCount = Object.values(permissionApiStates).reduce((total, state) => total + Object.values(state).filter(Boolean).length, 0);
@@ -1245,12 +1287,23 @@ function AccessAppsWorkspace() {
     setExpandedPermissionNavigationKeys(baseDataNavigationDefaultOpenKeys);
     setPermissionActiveTable(defaultPermissionTableKey);
     setPermissionSelectedTables([defaultPermissionTableKey]);
-    setPermissionApiStates(Object.fromEntries(permissionTables.map((table) => [table.key, defaultPermissionApiState()])));
+    setPermissionApiStates(Object.fromEntries(permissionTables.map((table) => [table.key, {
+      ...defaultPermissionApiState(),
+      ...(table.key === disabledPermissionTableKey ? { create: true, delete: true } : {}),
+    }])));
     setPermissionFields({});
     setPermissionFieldOptionsCollapsed({});
-    setPermissionConditions({});
-    setExpandedPermissionApis([]);
-    setPermissionOtherSelected(["send_notice"]);
+    setPermissionConditions({
+      [disabledPermissionTableKey]: {
+        create: [],
+        delete: [{ field: "id", operator: "eq", value: "" }],
+        update: [],
+        read: [],
+      },
+    });
+    setExpandedPermissionApis(["delete"]);
+    setPermissionOtherSelected(["send_notice", "academic_api", "library_api"]);
+    setPermissionOtherInterfaceSelections((current) => ({ ...current, ...initialPermissionOtherInterfaceSelections }));
     setPermissionActiveOtherService("send_notice");
     setCollapsedPermissionOtherGroups([]);
     setPermissionNotificationChannels(["send_notification"]);
@@ -1276,8 +1329,10 @@ function AccessAppsWorkspace() {
   };
 
   const togglePermissionOtherInterface = (serviceKey: string, interfaceKey: string, checked: boolean) => {
+    const api = resolvedPermissionOtherServices.find((service) => service.key === serviceKey)?.interfaces?.find((item) => item.key === interfaceKey);
+    if (!api || api.status === "停用") return;
     setPermissionOtherInterfaceSelections((current) => {
-      const selected = current[serviceKey] || [];
+      const selected = current[serviceKey] ?? initialPermissionOtherInterfaceSelections[serviceKey] ?? [];
       const next = checked ? Array.from(new Set([...selected, interfaceKey])) : selected.filter((key) => key !== interfaceKey);
       togglePermissionOtherService(serviceKey, next.length > 0);
       return { ...current, [serviceKey]: next };
@@ -1293,15 +1348,19 @@ function AccessAppsWorkspace() {
   };
 
   const toggleAllPermissionOtherInterfaces = (checked: boolean) => {
-    const interfaceKeys = activePermissionOtherInterfaces.map((api) => api.key);
+    if (isPermissionOtherServiceDisabled) return;
+    const next = checked
+      ? Array.from(new Set([...activePermissionOtherInterfaceKeys, ...selectablePermissionOtherInterfaceKeys]))
+      : activePermissionOtherInterfaceKeys.filter((key) => !selectablePermissionOtherInterfaceKeys.includes(key));
     setPermissionOtherInterfaceSelections((current) => ({
       ...current,
-      [activePermissionOtherService.key]: checked ? interfaceKeys : [],
+      [activePermissionOtherService.key]: next,
     }));
-    togglePermissionOtherService(activePermissionOtherService.key, checked && interfaceKeys.length > 0);
+    togglePermissionOtherService(activePermissionOtherService.key, next.length > 0);
   };
 
   const togglePermissionApi = (apiKey: PermissionApiKey, checked: boolean) => {
+    if (isPermissionTableDisabled) return;
     setPermissionApiStates((current) => ({
       ...current,
       [activePermissionTable.key]: { ...(current[activePermissionTable.key] || defaultPermissionApiState()), [apiKey]: checked },
@@ -1318,6 +1377,7 @@ function AccessAppsWorkspace() {
   };
 
   const togglePermissionField = (apiKey: PermissionApiKey, fieldKey: string, checked: boolean) => {
+    if (isPermissionTableDisabled) return;
     setPermissionFields((current) => {
       const tableFields = current[activePermissionTable.key] || { create: [], delete: [], update: [], read: [] };
       const selected = tableFields[apiKey];
@@ -1332,6 +1392,7 @@ function AccessAppsWorkspace() {
   };
 
   const toggleAllPermissionFields = (apiKey: PermissionApiKey, checked: boolean) => {
+    if (isPermissionTableDisabled) return;
     setPermissionFields((current) => {
       const tableFields = current[activePermissionTable.key] || { create: [], delete: [], update: [], read: [] };
       return {
@@ -1345,6 +1406,7 @@ function AccessAppsWorkspace() {
   };
 
   const addPermissionCondition = (apiKey: PermissionApiKey) => {
+    if (isPermissionTableDisabled) return;
     setPermissionConditions((current) => {
       const tableConditions = current[activePermissionTable.key] || { create: [], delete: [], update: [], read: [] };
       return {
@@ -1358,6 +1420,7 @@ function AccessAppsWorkspace() {
   };
 
   const updatePermissionCondition = (apiKey: PermissionApiKey, index: number, patch: Partial<PermissionCondition>) => {
+    if (isPermissionTableDisabled) return;
     setPermissionConditions((current) => {
       const tableConditions = current[activePermissionTable.key] || { create: [], delete: [], update: [], read: [] };
       return {
@@ -1371,6 +1434,7 @@ function AccessAppsWorkspace() {
   };
 
   const removePermissionCondition = (apiKey: PermissionApiKey, index: number) => {
+    if (isPermissionTableDisabled) return;
     setPermissionConditions((current) => {
       const tableConditions = current[activePermissionTable.key] || { create: [], delete: [], update: [], read: [] };
       return {
@@ -1438,8 +1502,16 @@ function AccessAppsWorkspace() {
 
   const openInterfaceDetailModal = (row: RegisteredAppRow) => {
     setInterfaceDetailApp(row);
-    setInterfaceRows((interfaceSeedRows[row.app] || fallbackInterfaceRows(row.app)).map((item) => ({ ...item })));
     setInterfaceDetailOpen(true);
+  };
+
+  const updateInterfaceRows = (update: (rows: InterfaceRecord[]) => InterfaceRecord[]) => {
+    if (!interfaceDetailApp) return;
+    const appName = interfaceDetailApp.app;
+    setInterfaceRowsByApp((current) => ({
+      ...current,
+      [appName]: update(current[appName] ?? interfaceSeedRows[appName] ?? fallbackInterfaceRows(appName)),
+    }));
   };
 
   const openInterfaceEditor = (record?: InterfaceRecord) => {
@@ -1473,7 +1545,7 @@ function AccessAppsWorkspace() {
         docs: values.docs,
         status: values.status,
       };
-      setInterfaceRows((current) => interfaceEditorMode === "edit"
+      updateInterfaceRows((current) => interfaceEditorMode === "edit"
         ? current.map((item) => item.key === record.key ? record : item)
         : [...current, record]);
       setInterfaceEditorOpen(false);
@@ -1484,7 +1556,7 @@ function AccessAppsWorkspace() {
   };
 
   const removeInterface = (key: string) => {
-    setInterfaceRows((current) => current.filter((item) => item.key !== key));
+    updateInterfaceRows((current) => current.filter((item) => item.key !== key));
     message.success("接口已删除");
   };
 
@@ -2245,7 +2317,10 @@ function AccessAppsWorkspace() {
               <>
                 <div className="data-permission-main-heading">
                   <div>
-                    <Typography.Title level={4}>{activePermissionOtherService.name}</Typography.Title>
+                    <div className="data-permission-table-title-row">
+                      <Typography.Title level={4}>{activePermissionOtherService.name}</Typography.Title>
+                      {isPermissionOtherServiceDisabled && <Tag className="data-permission-disabled-tag">接口停用</Tag>}
+                    </div>
                     {activePermissionOtherService.key !== "send_notice" && <Typography.Text className="data-permission-other-hint">勾选允许当前应用调用的接口，已停用的接口无法被调用</Typography.Text>}
                   </div>
                 </div>
@@ -2281,6 +2356,7 @@ function AccessAppsWorkspace() {
                           <Checkbox
                             aria-label="全选接口"
                             checked={allOtherInterfacesSelected}
+                            disabled={isPermissionOtherServiceDisabled}
                             indeterminate={someOtherInterfacesSelected}
                             onChange={(event) => toggleAllPermissionOtherInterfaces(event.target.checked)}
                           />
@@ -2291,12 +2367,17 @@ function AccessAppsWorkspace() {
                         {activePermissionOtherInterfaces.map((api) => (
                           <div className="data-permission-other-interface-item" key={api.key}>
                             <Checkbox
+                              aria-label={api.name}
                               checked={activePermissionOtherInterfaceKeys.includes(api.key)}
+                              disabled={api.status === "停用"}
                               onChange={(event) => togglePermissionOtherInterface(activePermissionOtherService.key, api.key, event.target.checked)}
                             />
                             <div className="data-permission-other-interface-main">
                               <div className="data-permission-other-interface-title-row">
-                                <Typography.Text strong>{api.name}</Typography.Text>
+                                <div className="data-permission-other-interface-name">
+                                  <Typography.Text strong>{api.name}</Typography.Text>
+                                  {api.status === "停用" && !isPermissionOtherServiceDisabled && <Tag className="data-permission-disabled-tag">停用</Tag>}
+                                </div>
                                 <div className="data-permission-other-interface-methods">
                                   {api.methods.map((method) => <Tag className={`data-permission-other-interface-method is-${method.toLowerCase()}`} key={method}>{method}</Tag>)}
                                 </div>
@@ -2313,7 +2394,10 @@ function AccessAppsWorkspace() {
               <>
                 <div className="data-permission-main-heading">
                   <div>
-                    <Typography.Title level={4}>{activePermissionTable.name}</Typography.Title>
+                    <div className="data-permission-table-title-row">
+                      <Typography.Title level={4}>{activePermissionTable.name}</Typography.Title>
+                      {isPermissionTableDisabled && <Tag className="data-permission-disabled-tag">停用</Tag>}
+                    </div>
                     <Typography.Text type="secondary">{activePermissionTable.fields.length} 个字段 · {activePermissionTable.rows} 行数据</Typography.Text>
                   </div>
                 </div>
@@ -2331,7 +2415,7 @@ function AccessAppsWorkspace() {
                     return (
                       <div className={`data-permission-api-list-item${isSelected ? " is-selected" : ""}`} key={api.key}>
                         <div className="data-permission-api-list-row" onClick={() => isSelected && togglePermissionApiExpansion(api.key)}>
-                          <Checkbox checked={isSelected} onClick={(event) => event.stopPropagation()} onChange={(event) => togglePermissionApi(api.key, event.target.checked)} />
+                          <Checkbox aria-label={api.label} checked={isSelected} disabled={isPermissionTableDisabled} onClick={(event) => event.stopPropagation()} onChange={(event) => togglePermissionApi(api.key, event.target.checked)} />
                           <Typography.Text strong>{api.label}</Typography.Text>
                           <Tooltip title={isSelected ? (isExpanded ? "收起" : "展开") : "请先勾选权限"}>
                             <Button
@@ -2357,17 +2441,18 @@ function AccessAppsWorkspace() {
                                     <Typography.Title level={5}>数据过滤条件</Typography.Title>
                                     {apiConditions.length === 0 && <Typography.Text className="data-permission-block-hint" type="secondary">不添加条件表示全部数据可用</Typography.Text>}
                                   </div>
-                                  <Button className="data-permission-add-condition" type="link" size="small" icon={<PlusOutlined size={14} />} onClick={() => addPermissionCondition(api.key)}>添加条件</Button>
+                                  <Button className="data-permission-add-condition" type="link" size="small" disabled={isPermissionTableDisabled} icon={<PlusOutlined size={14} />} onClick={() => addPermissionCondition(api.key)}>添加条件</Button>
                                 </div>
                                 {apiConditions.map((condition, index) => (
                                   <Flex className="data-permission-condition-row" gap={8} key={`${condition.field}-${index}`}>
-                                    <Select suffixIcon={<DownOutlined size={16} />} value={condition.field} options={activePermissionTable.fields.map((field) => ({ value: field.key, label: field.label }))} onChange={(value) => updatePermissionCondition(api.key, index, { field: value })} />
-                                    <Select suffixIcon={<DownOutlined size={16} />} value={condition.operator} options={[{ value: "eq", label: "等于" }, { value: "ne", label: "不等于" }, { value: "in", label: "包含" }, { value: "gt", label: "大于" }, { value: "lt", label: "小于" }]} onChange={(value) => updatePermissionCondition(api.key, index, { operator: value })} />
-                                    <Input value={condition.value} placeholder="请输入条件值" onChange={(event) => updatePermissionCondition(api.key, index, { value: event.target.value })} />
+                                    <Select disabled={isPermissionTableDisabled} suffixIcon={<DownOutlined size={16} />} value={condition.field} options={activePermissionTable.fields.map((field) => ({ value: field.key, label: field.label }))} onChange={(value) => updatePermissionCondition(api.key, index, { field: value })} />
+                                    <Select disabled={isPermissionTableDisabled} suffixIcon={<DownOutlined size={16} />} value={condition.operator} options={[{ value: "eq", label: "等于" }, { value: "ne", label: "不等于" }, { value: "in", label: "包含" }, { value: "gt", label: "大于" }, { value: "lt", label: "小于" }]} onChange={(value) => updatePermissionCondition(api.key, index, { operator: value })} />
+                                    <Input disabled={isPermissionTableDisabled} value={condition.value} placeholder="请输入条件值" onChange={(event) => updatePermissionCondition(api.key, index, { value: event.target.value })} />
                                     <Tooltip title="删除条件">
                                       <Button
                                         type="text"
                                         aria-label="删除条件"
+                                        disabled={isPermissionTableDisabled}
                                         className="data-permission-condition-delete"
                                         icon={<DeleteOutlined size={16} />}
                                         onClick={() => removePermissionCondition(api.key, index)}
@@ -2387,6 +2472,7 @@ function AccessAppsWorkspace() {
                                     <div className="data-permission-selection-summary">
                                       <Checkbox
                                         aria-label={`全选${api.label}字段`}
+                                        disabled={isPermissionTableDisabled}
                                         checked={allFieldsSelected}
                                         indeterminate={someFieldsSelected}
                                         onChange={(event) => toggleAllPermissionFields(api.key, event.target.checked)}
@@ -2404,7 +2490,7 @@ function AccessAppsWorkspace() {
                                 </div>
                                 {!areFieldOptionsCollapsed && (
                                   <div className="data-permission-field-grid data-permission-base-field-grid">
-                                    {activePermissionTable.fields.map((field) => <Checkbox key={field.key} checked={apiFields.includes(field.key)} onChange={(event) => togglePermissionField(api.key, field.key, event.target.checked)}>{field.label}</Checkbox>)}
+                                    {activePermissionTable.fields.map((field) => <Checkbox key={field.key} checked={apiFields.includes(field.key)} disabled={isPermissionTableDisabled} onChange={(event) => togglePermissionField(api.key, field.key, event.target.checked)}>{field.label}</Checkbox>)}
                                   </div>
                                 )}
                               </div>

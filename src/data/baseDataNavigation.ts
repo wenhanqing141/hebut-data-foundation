@@ -17,7 +17,7 @@ const firstLevelCategories = [
 const childIndexes = [1, 2];
 
 function createNavigationNode(key: string, title: string, level: number): BaseDataNavigationNode {
-  if (level === 4) return { key, title, kind: "table" };
+  if (level === 4) return { key, title: key === "level-2-1-1-1" ? "停用状态示例" : title, kind: "table" };
 
   return {
     key,
