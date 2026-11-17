@@ -2333,11 +2333,6 @@ function AccessAppsWorkspace() {
                 {activePermissionOtherService.key === "send_notice" ? (
                   <div className="data-permission-other-config">
                     <div className="data-permission-config-block">
-                      <div className="data-permission-block-heading">
-                        <div className="data-permission-block-title-stack">
-                          <Typography.Title level={5}>允许的通知渠道</Typography.Title>
-                        </div>
-                      </div>
                       <div className="data-permission-field-grid">
                         {notificationChannels.map((channel) => (
                           <Checkbox
