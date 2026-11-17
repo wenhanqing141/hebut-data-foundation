@@ -1,6 +1,6 @@
 import { Button, Card, Checkbox, DatePicker, Descriptions, Empty, Flex, Form, Input, message, Modal, Pagination, Popconfirm, Radio, Select, Space, Tabs, Table, Tag, Tooltip, Typography } from "antd";
 import zhCN from "antd/locale/zh_CN";
-import { AllApplication, ApiApp, Clear as ClearOutlined, Close as CloseOutlined, DataSheet, DatabaseTime, Delete as DeleteOutlined, Down as DownOutlined, Notes, Plus as PlusOutlined, Permissions, PreviewOpen, Search as SearchOutlined, Time, User } from "@icon-park/react";
+import { AllApplication, ApiApp, Clear as ClearOutlined, Close as CloseOutlined, DataSheet, DatabaseTime, Delete as DeleteOutlined, Down as DownOutlined, FileCode, Notes, Plus as PlusOutlined, Permissions, PreviewOpen, Search as SearchOutlined, Time, User } from "@icon-park/react";
 import { useLayoutEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { OverflowTooltip } from "../components/OverflowTooltip";
@@ -1227,6 +1227,9 @@ function AccessAppsWorkspace() {
     && (!appliedFilters.appid || row.appid.includes(appliedFilters.appid))
     && (!appliedFilters.owner || row.owner.includes(appliedFilters.owner))
   ));
+  const hasAuthorizedApps = filteredRows.some((row) => authorizationViewRows.some((authorization) => (
+    authorization.app === row.app && authorization.content.length > 0
+  )));
   const pagedRows = filteredRows.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   const associationAppName = associationApp?.app || "";
@@ -1970,6 +1973,9 @@ function AccessAppsWorkspace() {
           <Button type="primary" icon={<PlusOutlined size={16} />} onClick={openRegisterModal}>应用注册</Button>
           <Button className="access-delete-record-button" type="default" icon={<DeleteOutlined size={16} />}>删除记录</Button>
         </Space>
+        {hasAuthorizedApps && (
+          <Button type="text" icon={<FileCode size={16} />} onClick={() => message.info("接口文档暂未配置")}>接口文档</Button>
+        )}
       </div>
       <div className="prototype-table-container">
         <div ref={tableScrollRef} className="prototype-table-scroll" style={{ "--access-apps-table-body-height": `${tableBodyHeight}px` } as React.CSSProperties}>

@@ -432,7 +432,7 @@ body { color: var(--color-text); background: var(--color-page-bg); font-family: 
 .access-apps-workspace { min-height: calc(100vh - 64px - 64px); border: 1px solid var(--color-border-subtle); border-radius: 12px; }
 .access-shell .access-apps-workspace { height: 100%; min-height: 0; flex: 1 1 auto; }
 .access-apps-workspace .prototype-table-filterbar { flex: 0 0 auto; }
-.access-apps-workspace .prototype-table-toolbar { flex: 0 0 auto; }
+.access-apps-workspace .prototype-table-toolbar { display: flex; flex: 0 0 auto; align-items: center; justify-content: space-between; gap: 16px; }
 .access-apps-workspace .prototype-table-container { position: relative; margin-bottom: 0; }
 .access-apps-workspace .prototype-table-scroll { margin-right: 320px; }
 .access-apps-workspace .prototype-table-scroll::-webkit-scrollbar { height: 6px; }
