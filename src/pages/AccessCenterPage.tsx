@@ -863,7 +863,30 @@ function AuthorizationViewWorkspace() {
                       <Typography.Text type="secondary">{permission.fields.length ? `${permission.fields.length} 个字段` : "无字段权限"}</Typography.Text>
                     </Flex>
                     <Descriptions size="small" column={1} items={[
-                    { key: "scope", label: "数据范围", children: <Typography.Text className="authorization-detail-plain-text">{permission.conditions.length ? permission.conditions.join("、") : "全部数据"}</Typography.Text> },
+                    { key: "scope", label: "数据范围", children: permission.conditions.length ? (
+                      <Flex className="authorization-detail-conditions" vertical gap={8}>
+                        {permission.conditions.map((condition) => {
+                          const [field, operator, ...valueParts] = condition.split(" ");
+                          const values = [field, operator, valueParts.join(" ")];
+                          return (
+                            <div className="authorization-detail-condition-row" key={condition}>
+                              {values.map((value, index) => (
+                                <Select
+                                  className="authorization-detail-condition-select"
+                                  key={index}
+                                  aria-label={`${permission.action}数据范围${["字段", "运算符", "值"][index]}`}
+                                  disabled
+                                  value={value}
+                                  options={[{ value, label: value }]}
+                                  suffixIcon={<DownOutlined size={14} />}
+                                  labelRender={() => <OverflowTooltip title={value} className="authorization-detail-condition-label">{value}</OverflowTooltip>}
+                                />
+                              ))}
+                            </div>
+                          );
+                        })}
+                      </Flex>
+                    ) : <Typography.Text className="authorization-detail-plain-text">全部数据</Typography.Text> },
                     { key: "fields", label: "字段权限", children: permission.fields.length ? <Typography.Text className="authorization-detail-plain-text">{permission.fields.join("、")}</Typography.Text> : <Typography.Text type="secondary">-</Typography.Text> },
                     ]} />
                   </Flex>
@@ -1971,7 +1994,6 @@ function AccessAppsWorkspace() {
       <div className="prototype-table-toolbar">
         <Space size={8}>
           <Button type="primary" icon={<PlusOutlined size={16} />} onClick={openRegisterModal}>应用注册</Button>
-          <Button className="access-delete-record-button" type="default" icon={<DeleteOutlined size={16} />}>删除记录</Button>
         </Space>
         {hasAuthorizedApps && (
           <Button type="text" icon={<FileCode size={16} />} onClick={() => message.info("接口文档暂未配置")}>接口文档</Button>
