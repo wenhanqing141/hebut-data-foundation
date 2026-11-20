@@ -426,6 +426,8 @@ type PermissionField = { key: string; label: string; sensitive?: boolean };
 type PermissionTable = { key: string; name: string; rows: string; fields: PermissionField[]; status: "启用" | "停用" };
 type PermissionApiState = Record<PermissionApiKey, boolean>;
 
+const minimumPermissionFieldMessage = "至少要给1个字段权限，同时不允许取消最后一个字段的权限";
+
 const permissionApis: Array<{ key: PermissionApiKey; label: string }> = [
   { key: "create", label: "新增数据" },
   { key: "delete", label: "删除数据" },
@@ -1271,9 +1273,6 @@ function AccessAppsWorkspace() {
     });
   const pagedAssociationRows = filteredAssociationRows.slice((associationPage - 1) * associationPageSize, associationPage * associationPageSize);
   const selectableAssociationKeys = pagedAssociationRows.filter((row) => !row.linkedTo || row.linkedTo === associationAppName).map((row) => row.key);
-  const allSelectableAssociationKeys = associationSourceRows.filter((row) => !row.linkedTo || row.linkedTo === associationAppName).map((row) => row.key);
-  const allAssociationSelected = allSelectableAssociationKeys.length > 0 && allSelectableAssociationKeys.every((key) => associationSelectedKeys.includes(key));
-  const someAssociationSelected = !allAssociationSelected && allSelectableAssociationKeys.some((key) => associationSelectedKeys.includes(key));
   const allAssociationPageSelected = selectableAssociationKeys.length > 0 && selectableAssociationKeys.every((key) => associationSelectedKeys.includes(key));
   const someAssociationPageSelected = !allAssociationPageSelected && selectableAssociationKeys.some((key) => associationSelectedKeys.includes(key));
 
@@ -1317,7 +1316,14 @@ function AccessAppsWorkspace() {
       ...defaultPermissionApiState(),
       ...(table.key === disabledPermissionTableKey ? { create: true, delete: true } : {}),
     }])));
-    setPermissionFields({});
+    setPermissionFields({
+      [disabledPermissionTableKey]: {
+        create: defaultPermissionFields.map((field) => field.key),
+        delete: [],
+        update: [],
+        read: [],
+      },
+    });
     setPermissionFieldOptionsCollapsed({});
     setPermissionConditions({
       [disabledPermissionTableKey]: {
@@ -1387,6 +1393,15 @@ function AccessAppsWorkspace() {
 
   const togglePermissionApi = (apiKey: PermissionApiKey, checked: boolean) => {
     if (isPermissionTableDisabled) return;
+    if (checked && apiKey !== "delete") {
+      setPermissionFields((current) => ({
+        ...current,
+        [activePermissionTable.key]: {
+          ...(current[activePermissionTable.key] || { create: [], delete: [], update: [], read: [] }),
+          [apiKey]: activePermissionTable.fields.map((field) => field.key),
+        },
+      }));
+    }
     setPermissionApiStates((current) => ({
       ...current,
       [activePermissionTable.key]: { ...(current[activePermissionTable.key] || defaultPermissionApiState()), [apiKey]: checked },
@@ -1404,6 +1419,11 @@ function AccessAppsWorkspace() {
 
   const togglePermissionField = (apiKey: PermissionApiKey, fieldKey: string, checked: boolean) => {
     if (isPermissionTableDisabled) return;
+    const selectedFields = permissionFields[activePermissionTable.key]?.[apiKey] || [];
+    if (!checked && selectedFields.length === 1 && selectedFields.includes(fieldKey)) {
+      message.warning(minimumPermissionFieldMessage);
+      return;
+    }
     setPermissionFields((current) => {
       const tableFields = current[activePermissionTable.key] || { create: [], delete: [], update: [], read: [] };
       const selected = tableFields[apiKey];
@@ -1412,20 +1432,6 @@ function AccessAppsWorkspace() {
         [activePermissionTable.key]: {
           ...tableFields,
           [apiKey]: checked ? Array.from(new Set([...selected, fieldKey])) : selected.filter((key) => key !== fieldKey),
-        },
-      };
-    });
-  };
-
-  const toggleAllPermissionFields = (apiKey: PermissionApiKey, checked: boolean) => {
-    if (isPermissionTableDisabled) return;
-    setPermissionFields((current) => {
-      const tableFields = current[activePermissionTable.key] || { create: [], delete: [], update: [], read: [] };
-      return {
-        ...current,
-        [activePermissionTable.key]: {
-          ...tableFields,
-          [apiKey]: checked ? activePermissionTable.fields.map((field) => field.key) : [],
         },
       };
     });
@@ -1622,10 +1628,6 @@ function AccessAppsWorkspace() {
       if (checked) return Array.from(new Set([...current, ...selectableAssociationKeys]));
       return current.filter((key) => !selectableAssociationKeys.includes(key));
     });
-  };
-
-  const toggleAllAssociations = (checked: boolean) => {
-    setAssociationSelectedKeys((current) => checked ? Array.from(new Set([...current, ...allSelectableAssociationKeys])) : current.filter((key) => !allSelectableAssociationKeys.includes(key)));
   };
 
   const handleAssociationConfirm = () => {
@@ -2432,8 +2434,6 @@ function AccessAppsWorkspace() {
                     const apiConditions = permissionConditions[activePermissionTable.key]?.[api.key] || [];
                     const fieldOptionsKey = `${activePermissionTable.key}:${api.key}`;
                     const areFieldOptionsCollapsed = Boolean(permissionFieldOptionsCollapsed[fieldOptionsKey]);
-                    const allFieldsSelected = activePermissionTable.fields.length > 0 && apiFields.length === activePermissionTable.fields.length;
-                    const someFieldsSelected = apiFields.length > 0 && !allFieldsSelected;
 
                     return (
                       <div className={`data-permission-api-list-item${isSelected ? " is-selected" : ""}`} key={api.key}>
@@ -2491,25 +2491,13 @@ function AccessAppsWorkspace() {
                                   <div className="data-permission-block-title-stack">
                                     <Typography.Title level={5}>{api.key === "read" ? "可见字段" : "可编辑字段"}</Typography.Title>
                                   </div>
-                                  <div className="data-permission-field-heading-actions">
-                                    <div className="data-permission-selection-summary">
-                                      <Checkbox
-                                        aria-label={`全选${api.label}字段`}
-                                        disabled={isPermissionTableDisabled}
-                                        checked={allFieldsSelected}
-                                        indeterminate={someFieldsSelected}
-                                        onChange={(event) => toggleAllPermissionFields(api.key, event.target.checked)}
-                                      />
-                                      <Typography.Text className="data-permission-field-count" type="secondary">已选 {apiFields.length} / {activePermissionTable.fields.length}</Typography.Text>
-                                    </div>
-                                    <Button
-                                      type="link"
-                                      className="data-permission-toggle-fields"
-                                      onClick={() => setPermissionFieldOptionsCollapsed((current) => ({ ...current, [fieldOptionsKey]: !areFieldOptionsCollapsed }))}
-                                    >
-                                      {areFieldOptionsCollapsed ? "展开字段" : "收起字段"}
-                                    </Button>
-                                  </div>
+                                  <Button
+                                    type="link"
+                                    className="data-permission-toggle-fields"
+                                    onClick={() => setPermissionFieldOptionsCollapsed((current) => ({ ...current, [fieldOptionsKey]: !areFieldOptionsCollapsed }))}
+                                  >
+                                    {areFieldOptionsCollapsed ? "展开字段" : "收起字段"}
+                                  </Button>
                                 </div>
                                 {!areFieldOptionsCollapsed && (
                                   <div className="data-permission-field-grid data-permission-base-field-grid">
@@ -2553,9 +2541,7 @@ function AccessAppsWorkspace() {
         onCancel={() => setAssociationOpen(false)}
         footer={(
           <div className="association-modal-footer">
-            <Checkbox checked={allAssociationSelected} indeterminate={someAssociationSelected} disabled={allSelectableAssociationKeys.length === 0} onChange={(event) => toggleAllAssociations(event.target.checked)}>
-              <span className="association-selection-summary">全选所有数据，已选 {associationSelectedKeys.length} 项</span>
-            </Checkbox>
+            <span className="association-selection-summary">共 {filteredAssociationRows.length} 条数据</span>
             <Space size={8}>
               <Button style={{ width: 88 }} onClick={() => setAssociationOpen(false)}>取消</Button>
               <Button type="primary" style={{ width: 88 }} onClick={handleAssociationConfirm}>确定</Button>

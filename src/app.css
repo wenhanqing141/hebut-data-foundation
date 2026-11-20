@@ -363,10 +363,7 @@ body { color: var(--color-text); background: var(--color-page-bg); font-family: 
 .data-permission-modal .data-permission-block-heading h5.ant-typography { margin: 0; font-size: 14px; line-height: 22px; }
 .data-permission-selection-summary { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 8px; margin-inline-start: auto; }
 .data-permission-field-count.ant-typography { color: var(--color-text-secondary); font-size: 14px; text-align: right; white-space: nowrap; }
-.data-permission-field-heading-actions { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 12px; margin-inline-start: auto; }
-.data-permission-field-heading-actions .data-permission-selection-summary { margin-inline-start: 0; }
-.data-permission-toggle-fields.ant-btn-link { position: relative; box-sizing: border-box; width: auto; height: 22px; min-height: 22px; margin-inline-start: 0; padding: 0 0 0 12px !important; border: 0 !important; border-radius: 0; outline: 0 !important; color: var(--color-text-secondary); background: transparent !important; box-shadow: none !important; font-size: 14px; line-height: 22px; text-decoration: none !important; }
-.data-permission-toggle-fields.ant-btn-link::before { position: absolute; inset-inline-start: 0; top: 50%; width: 1px; height: 14px; background: var(--color-border-subtle); content: ""; transform: translateY(-50%); }
+.data-permission-toggle-fields.ant-btn-link { position: relative; box-sizing: border-box; width: auto; height: 22px; min-height: 22px; margin-inline-start: 0; padding: 0 !important; border: 0 !important; border-radius: 0; outline: 0 !important; color: var(--color-text-secondary); background: transparent !important; box-shadow: none !important; font-size: 14px; line-height: 22px; text-decoration: none !important; }
 .data-permission-toggle-fields.ant-btn-link:not(:disabled):hover { color: var(--color-text) !important; background: transparent !important; box-shadow: none !important; text-decoration: none !important; }
 .data-permission-toggle-fields.ant-btn-link:not(:disabled):focus,
 .data-permission-toggle-fields.ant-btn-link:not(:disabled):focus-visible,
