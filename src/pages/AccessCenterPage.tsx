@@ -2541,7 +2541,7 @@ function AccessAppsWorkspace() {
         onCancel={() => setAssociationOpen(false)}
         footer={(
           <div className="association-modal-footer">
-            <span className="association-selection-summary">共 {filteredAssociationRows.length} 条数据</span>
+            <span className="association-selection-summary">已选 {associationSelectedKeys.length} 条</span>
             <Space size={8}>
               <Button style={{ width: 88 }} onClick={() => setAssociationOpen(false)}>取消</Button>
               <Button type="primary" style={{ width: 88 }} onClick={handleAssociationConfirm}>确定</Button>
@@ -2588,6 +2588,7 @@ function AccessAppsWorkspace() {
               current={associationPage}
               pageSize={associationPageSize}
               total={filteredAssociationRows.length}
+              showTotal={(total) => `共 ${total} 条`}
               pageSizeOptions={[10, 20, 50]}
               showSizeChanger={{ suffixIcon: <DownOutlined size={16} /> }}
               showQuickJumper

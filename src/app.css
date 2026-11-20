@@ -277,7 +277,7 @@ body { color: var(--color-text); background: var(--color-page-bg); font-family: 
 .association-pagination-row { display: flex; flex: 0 0 auto; justify-content: center; padding-block: 8px; border-top: 1px solid var(--color-border-subtle); }
 .association-pagination-row .ant-pagination { margin: 0; }
 .association-modal-footer { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
-.association-selection-summary { color: var(--color-text-tertiary); }
+.association-selection-summary { color: var(--color-text); }
 .association-modal-footer > .ant-space { margin-inline-start: auto; }
 .data-permission-modal { height: calc(100vh - 40px); max-height: none; }
 .data-permission-modal .ant-modal-container { display: flex; height: 100%; max-height: none; flex-direction: column; padding: var(--modal-content-padding) var(--modal-content-padding) 0; border-bottom-right-radius: 0; border-bottom-left-radius: 0; }
